@@ -3,5 +3,8 @@
         {
             "path": "."
         }
-    ]
+	],
+	"trae": {
+		"workspaceId": "b09d181814b39713de4e1ec2794b80a3"
+	}
 }
