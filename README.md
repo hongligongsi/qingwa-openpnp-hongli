@@ -613,6 +613,30 @@ RESET）；② 换一根确定支持数据的 USB 线；③ Linux 下确认有 `
 恢复到 2444 项基线。
 </details>
 
+<details>
+<summary><b>开机蜂鸣器声音怎么设置？</b></summary>
+
+开机音在 `Marlin/Configuration_adv.h` 的 `STARTUP_COMMANDS` 中定义（主板配置
+约 3855 行），本质是开机时自动执行的一串 `M300` 蜂鸣 G 代码：
+
+```
+#define STARTUP_COMMANDS "M300 S2000 P100\nG4 P900\nM300 S2000 P100\n..." \
+                         "...\nM300 S2500 P1000"
+```
+
+- `S<频率>`：蜂鸣音调（Hz）；`P<时长>`：持续时间（ms）；`G4 P<ms>`：音符间隔。
+- 想换节奏/音调，直接改这串命令即可；想换成旋律，可用固件里注释掉的三音
+  示例：`"M300 S523 P150\nM300 S659 P150\nM300 S784 P300"`（C5-E5-G5）。
+- 前提条件：`Configuration.h` 中需启用 `SPEAKER`（主板配置已启用），否则
+  `M300` 的 `S` 变频参数不生效；蜂鸣器引脚由
+  `pins_OPULO_LUMEN_REV5.h` 的 `BEEPER_PIN PA7` 定义。
+- 想在屏幕菜单里加静音开关：启用 `Configuration_adv.h` 中的
+  `SOUND_MENU_ITEM`；`SOUND_ON_DEFAULT` 控制默认是否发声。调试时也可
+  直接发 `M300 S0 P0` 临时静音测试。
+
+改完记得重新编译烧录（开机音是编译期写死的，不能运行时保存）。
+</details>
+
 ---
 
 ## 🤝 致谢与许可证

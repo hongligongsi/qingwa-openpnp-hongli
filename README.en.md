@@ -652,6 +652,35 @@ table in "Configuration & Versioning"). Restore the mis-edited lines via
 back to the 2444-item baseline.
 </details>
 
+<details>
+<summary><b>How do I change the startup beeper sound?</b></summary>
+
+The startup tune lives in `STARTUP_COMMANDS` in `Marlin/Configuration_adv.h`
+(around line 3855 in the board config). It is simply a chain of `M300` beeper
+G-codes executed at boot:
+
+```
+#define STARTUP_COMMANDS "M300 S2000 P100\nG4 P900\nM300 S2000 P100\n..." \
+                         "...\nM300 S2500 P1000"
+```
+
+- `S<hz>` sets the tone frequency, `P<ms>` the duration, and `G4 P<ms>` adds a
+  pause between notes.
+- To change the rhythm/pitch just edit this string. To use a melody, the
+  commented-out three-note example in the config works as-is:
+  `"M300 S523 P150\nM300 S659 P150\nM300 S784 P300"` (C5-E5-G5).
+- Prerequisites: `SPEAKER` must be enabled in `Configuration.h` (already on for
+  the board config), otherwise the `S` frequency parameter of `M300` has no
+  effect. The buzzer pin is defined as `BEEPER_PIN PA7` in
+  `pins_OPULO_LUMEN_REV5.h`.
+- To add an on-screen mute toggle, enable `SOUND_MENU_ITEM` in
+  `Configuration_adv.h`; `SOUND_ON_DEFAULT` controls whether sound is on by
+  default. For quick testing you can also send `M300 S0 P0` to mute temporarily.
+
+Remember to rebuild and reflash afterwards — the startup tune is baked in at
+compile time and cannot be saved at runtime.
+</details>
+
 ---
 
 ## 🤝 Credits & License
