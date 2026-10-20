@@ -177,6 +177,37 @@ How to choose among the four feeder configs:
 | RS485 TX/RX enable | `PD11` / `PD12` |
 | ID pins | `PD0`–`PD3` |
 
+### Kinematics & travel parameters (from `Marlin/Configuration.h`)
+
+| Parameter | Value | Notes |
+|------|-----|------|
+| Steps/mm | `320, 320, 40, 4.44, 4.44` | X / Y / Z / I / J |
+| X travel | 0 – 433 mm | homes to min end (`X_HOME_DIR -1`) |
+| Y travel | 0 – 487 mm | homes to min end |
+| Z travel | 0 – 63 mm | homes to min end, lifts to 21 mm after homing (`Z_AFTER_HOMING`) |
+| I / J travel | 0 – 720 (rotation, degrees) | no homing (`I/J_HOME_DIR 0`) |
+| Default speeds | `7000, 7000, 1000, 50000, 50000` mm/s | X / Y / Z / I / J |
+| X/Y/Y2 coupling | X + Y + Y2 dual-motor sync | gantry; Y2 follows Y |
+
+> I / J are **rotational axes** (`AXIS4_ROTATES` / `AXIS5_ROTATES` in the
+> config), referenced in G-code by the letters **`A`** / **`B`**, range
+> 0–720° (about two turns); query with `M114`, test with `G1 A90`.
+> Y2 is the second Y driver (its own TMC2209 STEP/DIR/EN) for gantry
+> dual-motor sync.
+
+### Connecting to the OpenPnP host
+
+- **Interface**: USB CDC virtual serial (`SERIAL_PORT -1`); baud is nominal —
+  align on `250000` for consistency;
+- **Identify**: send `M115` after connecting — it should report the machine
+  name `LumenPnP` and firmware version;
+- **Motion commands**: standard `G0/G1` + `G28` homing + `M119` endstop query,
+  fully compatible with the Marlin command set;
+- **Parameter storage**: EEPROM is SRAM-emulated — `M500` save /
+  `M501` load / `M502` reset to firmware defaults;
+- Each feeder appears to the host as an **independent serial device** (each
+  flashed with the feeder firmware).
+
 ### REV05 AUX port (8-pin)
 
 ```
