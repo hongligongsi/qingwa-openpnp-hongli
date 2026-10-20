@@ -264,6 +264,7 @@ qingwa-pnp-marlin/
 ├── marlin.code-workspace       # VS Code 多根工作区
 ├── process-palette.json        # VS Code「Process Palette」→ PIO Build 命令定义
 ├── LICENSE                     # GPL-3.0
+├── m300_editor/                # 🎵 网页版 M300 蜂鸣器旋律编辑器（含教程与截图）
 └── README.md / README.en.md    # 多语言说明（中文默认）
 ```
 
@@ -635,6 +636,39 @@ RESET）；② 换一根确定支持数据的 USB 线；③ Linux 下确认有 `
   直接发 `M300 S0 P0` 临时静音测试。
 
 改完记得重新编译烧录（开机音是编译期写死的，不能运行时保存）。
+
+> 💡 **不想手敲 G-code？** 仓库自带一个网页版
+> **[M300 蜂鸣器旋律编辑器](m300_editor/README.md)**（`m300_editor/index.html`），
+> 支持可视化编辑音符、实时预览播放、自定义波形试听，可一键导入/导出
+> `STARTUP_COMMANDS` 格式的 G-code。详见
+> [m300_editor/README.md](m300_editor/README.md)。
+</details>
+
+<details>
+<summary><b>M300 蜂鸣器旋律编辑器怎么用？</b></summary>
+
+仓库自带一个纯网页工具 `m300_editor/index.html`，用于在电脑上可视化编辑开机蜂鸣旋律。
+
+**打开方式：**
+- 双击 `m300_editor/index.html` 直接用浏览器打开；或
+- 在项目根目录运行 `python -m http.server 8765`，访问
+  `http://127.0.0.1:8765/m300_editor/index.html`。
+
+**典型流程：**
+1. 把固件 `STARTUP_COMMANDS` 引号里的 G-code 粘贴到页面底部导入框，
+   点「⬆ 从下方导入」，音符列表会自动填入频率和时长。
+2. 在表格里增删改音符（频率 Hz / 时长 ms），或直接点上方预设旋律
+   （简单蜂鸣 / 摩斯节奏 / Do-Mi-Sol / 开机旋律等）。
+3. 点「▶ 播放」实时试听；点时间轴上的色块可单独试听单个音符。
+4. 满意后点「⬇ 导出 G-code」→「📋 复制」，粘贴回
+   `Configuration_adv.h` 的 `STARTUP_COMMANDS` 引号内，重新编译烧录。
+
+**关于自定义波形：** 编辑器支持手绘波形 / 谐波滑块调节，但这只用于
+**电脑端预览听感**。实际固件的压电蜂鸣器只能输出方波，M300 指令只
+控制频率和时长，不支持自定义波形。
+
+> 完整教程（含界面截图）见
+> [m300_editor/README.md](m300_editor/README.md)。
 </details>
 
 ---
