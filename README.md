@@ -460,7 +460,12 @@ make tests-single-local TEST_TARGET=Opulo_Lumen_REV5
 
 - **`Marlin/Configuration.h` / `Configuration_adv.h`**：当前仓库实际使用的激活配置
   （对应 REV5 **主板**，即默认构建目标）。
-- **`Marlin/rev5-config/`**：主板配置快照，用于对照/归档。
+- **`Marlin/rev5-config/`**：主板配置快照，与激活配置保持**逐字节一致**
+  （2026-10-20 刷新）。**约定：每次修改主板配置并提交后，同步刷新该快照**：
+  ```bash
+  cp Marlin/Configuration.h    Marlin/rev5-config/Configuration.h
+  cp Marlin/Configuration_adv.h Marlin/rev5-config/Configuration_adv.h
+  ```
 - **`Marlin/rev3-*` / `rev4-*` 目录**：**飞达（Feeder）**固件的配置快照，
   按主控代次与送料器硬件版本分四套（见「目录结构」一节的对照表）；
   构建飞达固件时取出套用（步骤见「构建与烧录 → 程序二」）。
@@ -485,6 +490,9 @@ make tests-single-local TEST_TARGET=Opulo_Lumen_REV5
 3. **参数生效方式二选一**：
    - 烧录新固件后，执行 `M502`（载入固件默认值）+ `M500`（保存到 EEPROM）；
    - 或不重刷固件，直接在串口发 `M203 X8000 Y8000` + `M500` 临时调整。
+
+4. **同步快照**（改的是主板配置时）：把激活配置拷入 `rev5-config/`，
+   保持快照与现状一致（命令见上文「配置文件的组织方式」）。
 
 **⚠️ 修改注释时千万注意**：配置文件里的部分注释是**机器可读的**，
 被 `schema.py` 解析用于生成配置元数据，改动它们会导致构建失败或配置项丢失：

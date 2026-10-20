@@ -484,8 +484,13 @@ make tests-single-local TEST_TARGET=Opulo_Lumen_REV5
 
 - **`Marlin/Configuration.h` / `Configuration_adv.h`**: the configuration actually
   used by this repo (the REV5 **motherboard**, the default build target).
-- **`Marlin/rev5-config/`**: motherboard config snapshot, kept for
-  reference/archival.
+- **`Marlin/rev5-config/`**: motherboard config snapshot, kept **byte-identical**
+  to the active config (refreshed 2026-10-20). **Convention: after changing the
+  motherboard config and committing, refresh the snapshot too**:
+  ```bash
+  cp Marlin/Configuration.h    Marlin/rev5-config/Configuration.h
+  cp Marlin/Configuration_adv.h Marlin/rev5-config/Configuration_adv.h
+  ```
 - **`Marlin/rev3-*` / `rev4-*` folders**: config snapshots for the **feeder**
   firmware, four sets by controller generation and feeder hardware revision
   (see the table in "Repository Layout"); apply one when building the feeder
@@ -514,6 +519,10 @@ change. Do it like this:
      `M500` (save to EEPROM);
    - or without reflashing, send `M203 X8000 Y8000` + `M500` over serial for a
      runtime change.
+
+4. **Sync the snapshot** (when the motherboard config changed): copy the active
+   config into `rev5-config/` to keep it current (command in "Configuration
+   file layout" above).
 
 **⚠️ Be careful with comments**: some comments in the config files are
 **machine-readable** — parsed by `schema.py` to generate config metadata.
