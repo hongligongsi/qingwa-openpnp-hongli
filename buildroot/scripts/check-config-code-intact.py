@@ -119,7 +119,10 @@ def load_ref(ref, fname):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--ref', default='HEAD', help='参考版本 (git ref)')
+    ap.add_argument('--files', nargs='+', default=None,
+                    help='待校验的配置文件 (默认: 主板激活配置两个文件)')
     args = ap.parse_args()
+    files = args.files or FILES
 
     print('=' * 64)
     print(f'功能等价性校验: 当前工作区 vs {args.ref}')
@@ -131,7 +134,7 @@ def main():
         return 2
 
     total_diff = 0
-    for fname in FILES:
+    for fname in files:
         print(f'\n[{fname}]')
         ref_text = load_ref(args.ref, fname)
         if ref_text is None:
