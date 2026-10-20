@@ -18,11 +18,13 @@
 ## 目录
 
 - [📖 项目简介](#-项目简介)
+- [🧩 系统架构：一套源码，两种固件](#-系统架构一套源码两种固件)
 - [✨ 功能特性](#-功能特性)
 - [🧱 硬件与引脚](#-硬件与引脚)
 - [🏗 目录结构](#-目录结构)
+- [🚀 快速上手](#-快速上手)
 - [⚙️ 构建与烧录](#️-构建与烧录)
-- [🔧 配置与版本管理](#-配置与版本管理)
+- [🔧 配置修改与版本管理](#-配置修改与版本管理)
 - [🧰 常用 G 代码](#-常用-g-代码)
 - [🛠 常见问题](#-常见问题)
 - [🤝 致谢与许可证](#-致谢与许可证)
@@ -34,9 +36,28 @@
 本项目是 **「青蛙贴片机」专用固件**。它并非 3D 打印机固件，而是把一个通用开源固件
 **Marlin** 改造为 **SMT 贴片机（Pick-and-Place）的运动控制器固件**。
 
-固件面向 **Opulo LumenPnP Motherboard REV05**（MCU：STMicroelectronics **STM32F407VET6**，
-ARM Cortex-M4，512 KB Flash / 192 KB SRAM）编写。REV5 主板是一块六轴贴片机控制板，
-自带 TMC 步进驱动接口、限位、送料器信号、RS485 与 RGB 灯带等贴片机需要的板载资源。
+### 这台机器由什么组成？
+
+一台完整的青蛙贴片机包含两大部分，**各自运行一套独立但同源的固件**：
+
+1. **主板（Motherboard）** —— 机器的"大脑 + 四肢"。
+   基于 **Opulo LumenPnP Motherboard REV05**（MCU：STMicroelectronics
+   **STM32F407VET6**，ARM Cortex-M4，512 KB Flash / 192 KB SRAM），
+   负责机头的 X/Y 定位、Z 轴升降、双电机同步（X/Y2）、限位检测、
+   相机/光源/真空等外设控制。它就是本仓库的**默认构建目标**。
+
+2. **飞达（Feeder，电动送料器）** —— 负责把元件编带按格推进到取料位。
+   每台飞达内部有一块 **Opulo 飞达主控板（REV3 或 REV4）**，同样运行 Marlin，
+   用旋转轴驱动拨爪轮完成送带动作。飞达固件用本仓库里的
+   `rev*-feeder-config` 配置快照构建（详见下文教程）。
+
+固件通过 USB 串口接收 G 代码 / 状态查询，可与 OpenPnP 等上位机软件配合完成
+自动贴装流程。上位机把**主板和每台飞达视为独立的串口设备**分别下发指令。
+
+> 该仓库从上游 **Marlin 2.1.x** 与 **Opulo LumenPnP** 开源硬件/软件生态定制而来，
+> 保留了 Marlin 强大的运动规划与 HAL 分层结构，并加入了 Opulo 主板定义与多版本配置。
+
+### 主板固件裁掉了什么？
 
 为达到"纯运动控制"目标，本固件在配置层面移除了 3D 打印相关逻辑：
 
@@ -48,11 +69,48 @@ ARM Cortex-M4，512 KB Flash / 192 KB SRAM）编写。REV5 主板是一块六轴
 | 驱动类型 | 全部 TMC2209（单线 UART） |
 | 串口 | USB CDC（`SERIAL_PORT -1`）@ 250000 |
 
-固件通过 USB 串口接收 G 代码 / 状态查询，可与 OpenPnP 等上位机软件配合完成
-自动贴装流程。
+---
 
-> 该仓库从上游 **Marlin 2.1.x** 与 **Opulo LumenPnP** 开源硬件/软件生态定制而来，
-> 保留了 Marlin 强大的运动规划与 HAL 分层结构，并加入了 Opulo 主板定义与多版本配置。
+## 🧩 系统架构：一套源码，两种固件
+
+本仓库**只维护一份 Marlin 源码**，主板固件和飞达固件都从它构建——
+两者唯一的区别是编译时套用的**配置文件**（`Configuration.h` /
+`Configuration_adv.h`）和**构建环境（env）**不同：
+
+```
+                        ┌──────────────────────────────┐
+                        │   上位机 OpenPnP / 手动 G 代码  │
+                        └──────┬───────────────┬───────┘
+                     USB 串口   │               │   USB 串口（每台飞达一个口）
+                               ▼               ▼
+                    ┌─────────────────┐   ┌─────────────────┐
+                    │  主板固件        │   │  飞达固件 ×N      │
+                    │  REV5 主控       │   │  REV3/REV4 主控  │
+                    │  env: REV5      │   │  env: REV3/REV4 │
+                    │  配置: Marlin/根 │   │  配置: rev*-feeder-config/ │
+                    ├─────────────────┤   ├─────────────────┤
+                    │ · X/Y/Y2 机头定位│   │ · 旋转轴驱动拨爪轮│
+                    │ · Z 轴升降       │   │ · 送带/退带      │
+                    │ · 限位/DIAG 检测 │   │ · EXTRUDERS 0   │
+                    │ · 相机/灯带/真空 │   │   （无加热）     │
+                    └─────────────────┘   └─────────────────┘
+```
+
+**两种固件怎么选？**
+
+| 你要刷的目标 | 用哪个 env | 用哪套配置 |
+|---|---|---|
+| 贴片机主板（REV05） | `Opulo_Lumen_REV5`（默认，直接 `pio run`） | `Marlin/` 根目录（无需任何操作） |
+| 飞达（REV4 主控） | `Opulo_Lumen_REV4` | `rev4-v3.0 / v3.1 / v3.1-pwm-aux` 三选一 |
+| 飞达（REV3 主控，旧款） | `Opulo_Lumen_REV3` | `rev3-feeder-config` |
+
+飞达配置四选一的依据（看飞达硬件版本和需求）：
+
+- `rev4-v3.0-feeder-config`：v3.0 硬件，送带速度较保守（200 mm/s）；
+- `rev4-v3.1-feeder-config`：v3.1 硬件，送带速度提升到 1000 mm/s；
+- `rev4-v3.1-feeder-pwm-aux-config`：同 v3.1，额外开启 `FAST_PWM_FAN`
+  （AUX 风扇 31.4 kHz 高频驱动，消除啸叫）；
+- `rev3-feeder-config`：REV3 主控旧款飞达（与 REV4 系列引脚/功能差异较大）。
 
 ---
 
@@ -121,40 +179,57 @@ ARM Cortex-M4，512 KB Flash / 192 KB SRAM）编写。REV5 主板是一块六轴
 
 ## 🏗 目录结构
 
+本仓库包含**两套固件程序**，共用同一份 Marlin 源码，靠「配置文件 + 构建环境（env）」区分：
+
+| 程序 | 目标硬件 | 主控芯片 | 构建 env | 配置来源 |
+|---|---|---|---|---|
+| **主板固件** | LumenPnP Motherboard REV5（贴片机主板） | STM32F407VET6 | `Opulo_Lumen_REV5`（默认） | `Marlin/` 根目录激活配置（快照见 `rev5-config/`） |
+| **飞达固件** | 电动送料器（Feeder）REV4 主控 | STM32F407VET6 | `Opulo_Lumen_REV4` | `Marlin/rev4-*-feeder-config/` 三选一 |
+| **飞达固件（旧款）** | 电动送料器（Feeder）REV3 主控 | STM32F407VET6 | `Opulo_Lumen_REV3` | `Marlin/rev3-feeder-config/` |
+
+三块板的板级定义（引脚 / 时钟 / 上传协议）分别在
+`buildroot/share/PlatformIO/boards/marlin_opulo_lumen_rev{3,4,5}.json`，
+引脚定义在 `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV{3,4,5}.h`。
+
 ```text
 qingwa-pnp-marlin/
 ├── .devcontainer/              # VS Code 开发容器（构建环境一键起）
 ├── .github/                    # GitHub CI / 社区配置（test-builds 等工作流）
 ├── .trellis/                   # AI 辅助开发工作流脚手架（可选）
-├── Marlin/                     # ⭐ 固件源码与配置（核心）
-│   ├── Configuration.h         #   当前激活配置（REV5）
+├── Marlin/                     # ⭐ 固件源码与配置（核心，两套程序共用）
+│   ├── Configuration.h         #   当前激活配置 = 主板 REV5
 │   ├── Configuration_adv.h     #   进阶配置
 │   ├── config.ini              #   Marlin 编译期配置（ini 语法，默认未启用）
 │   ├── Makefile                #   供 pio/arduino 的 make 入口
 │   ├── Version.h               #   版本字符串（构建期覆盖用）
-│   ├── rev3-feeder-config/     #   历史：REV3 送料器配置快照
-│   ├── rev4-v3.0-feeder-config/#   历史：REV4 + 送料器 v3.0 配置快照
-│   ├── rev4-v3.1-feeder-config/#   历史：REV4 + 送料器 v3.1 配置快照
-│   ├── rev4-v3.1-feeder-pwm-aux-config/  # REV4 v3.1 + PWM/AUX 配置快照
-│   ├── rev5-config/            #   与当前 Configuration.* 一致的 REV5 快照
-│   └── src/                    #   Marlin 核心源码
+│   │
+│   │   ── 主板（Motherboard）配置 ──
+│   ├── rev5-config/            #   REV5 主板配置快照（与激活配置对照/归档）
+│   │
+│   │   ── 飞达（Feeder）配置，四选一 ──
+│   ├── rev3-feeder-config/     #   飞达 REV3 主控（旧款送料器）
+│   ├── rev4-v3.0-feeder-config/#   飞达 REV4 主控 + 送料器 v3.0（慢速参数）
+│   ├── rev4-v3.1-feeder-config/#   飞达 REV4 主控 + 送料器 v3.1（快速参数）
+│   ├── rev4-v3.1-feeder-pwm-aux-config/  # 同 v3.1，另开 FAST_PWM_FAN（AUX 风扇 31.4 kHz）
+│   │
+│   └── src/                    #   Marlin 核心源码（两套程序共用，不区分板型）
 │       ├── MarlinCore.cpp|.h   #     固件入口
 │       ├── HAL/                #     硬件抽象层（STM32 等）
 │       ├── core/               #     boards.h 主板编号 / 宏
 │       ├── pins/               #     各板引脚定义
-│       │   └── stm32f4/pins_OPULO_LUMEN_REV5.h   # ← REV5 引脚
+│       │   └── stm32f4/pins_OPULO_LUMEN_REV5.h   # ← REV5 引脚（另有 REV3/REV4）
 │       ├── module/             #     planner / stepper / endstop …
 │       ├── gcode/              #     G/M 代码解析与执行
 │       ├── feature/ libs/ lcd/ sd/ inc/ tests/
 ├── buildroot/                  # PlatformIO 板级支持 / 脚本 / 测试
 │   ├── share/PlatformIO/
-│   │   ├── boards/marlin_opulo_lumen_rev5.json   # REV5 板级 JSON
-│   │   └── scripts/            #   configuration.py 等构建脚本
+│   │   ├── boards/             #   板级 JSON：marlin_opulo_lumen_rev3/4/5.json
+│   │   └── scripts/            #   configuration.py 等构建脚本 + config-i18n 校验工具
 │   ├── share/vscode/auto_build.py                #   Auto Build（PIO Build）
 │   └── tests/                  #   make tests-all-local 等自动化测试
 ├── config/  docker/  docs/     # 文档 / Docker / dev 文档（Bresenham、Serial…）
 ├── ini/                        # PlatformIO 环境矩阵（按芯片分类）
-│   └── stm32f4.ini             #   内含 [env:Opulo_Lumen_REV5]
+│   └── stm32f4.ini             #   内含 [env:Opulo_Lumen_REV3] / REV4 / REV5
 ├── .editorconfig  .gitattributes
 ├── platformio.ini              # ⭐ PlatformIO 工程入口（default_envs = Opulo_Lumen_REV5）
 ├── Makefile                    # make 快捷入口
@@ -163,6 +238,90 @@ qingwa-pnp-marlin/
 ├── LICENSE                     # GPL-3.0
 └── README.md / README.en.md    # 多语言说明（中文默认）
 ```
+
+### 两套程序的配置差异要点
+
+- **主板固件（REV5）**：驱动贴片机的 X/Y 运动轴、限位、相机/光源接口等，
+  是本仓库的默认构建目标。
+- **飞达固件（REV3/REV4）**：`EXTRUDERS 0`（无挤出/热端），
+  并将 `AXIS4/AXIS5/AXIS6` 声明为**旋转轴**（`AXISn_ROTATES`），
+  用于驱动送料拨爪轮；送带速度参数因硬件代次而不同。
+- 四套飞达配置之间的实质差异很小：
+  - `rev4-v3.0` vs `rev4-v3.1`：仅送带速度参数
+    （`DEFAULT_MAX_FEEDRATE` 200→1000 mm/s、`HOMING_FEEDRATE` 100→200 mm/min）；
+  - `rev4-v3.1-pwm-aux` vs `rev4-v3.1`：仅多开 `FAST_PWM_FAN`
+    （`FAST_PWM_FAN_FREQUENCY 31400`，AUX 风扇高频静音）；
+  - `rev3` 与 `rev4` 系列差异较大（不同主控代次，引脚与功能集不同）。
+
+---
+
+## 🚀 快速上手
+
+从零开始把一台贴片机主板跑起来，只需 5 步（约 15 分钟，首次编译除外）：
+
+### 第 1 步：安装构建环境
+
+1. 安装 [VS Code](https://code.visualstudio.com/) 与
+   [PlatformIO IDE 扩展](https://marketplace.visualstudio.com/items?itemName=PlatformIO.platformio-ide)
+   （它会自动装好 PlatformIO Core 和 STM32 工具链）；
+   或者只装命令行的 [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation.html)。
+2. 克隆本仓库：
+   ```bash
+   git clone https://github.com/hongligongsi/qingwa-openpnp-hongli.git
+   cd qingwa-openpnp-hongli
+   ```
+
+### 第 2 步：编译主板固件
+
+不用改任何东西——默认配置就是 REV5 主板：
+
+```bash
+pio run
+```
+
+首次编译会下载依赖库并全量构建，耗时数分钟；之后增量编译很快。
+编译成功的标志是输出 `SUCCESS` 和固件体积统计（Flash 应约 22%、RAM 约 7%），
+产物位于 `.pio/build/Opulo_Lumen_REV5/firmware.bin`（与 `.elf`）。
+
+### 第 3 步：让主板进入烧录模式
+
+主板出厂时 STM32 自带 **DFU 引导程序**（USB 设备 ID `0483:df11`）：
+
+1. 按住主板上的 **BOOT0** 按键不放；
+2. 短按一下 **RESET**，再松开 BOOT0；
+3. 插上 USB 线连接电脑——设备管理器（Windows）或 `lsusb`（Linux）里应出现
+   `STM32 BOOTLOADER`。
+
+> 如果主板已刷过本固件且 DFU 触发正常，也可直接 `pio run -t upload`，
+> PlatformIO 会自动检测 DFU 设备。
+
+### 第 4 步：烧录
+
+```bash
+pio run -e Opulo_Lumen_REV5 -t upload
+```
+
+看到 `File downloaded successfully` 即成功，拔插 USB 复位后固件即运行。
+
+### 第 5 步：连接验证
+
+```bash
+# 打开串口监视（注意波特率 250000）
+pio device monitor -b 250000
+```
+
+发送以下命令验证：
+
+```gcode
+M115            ; 回报固件版本与机器名（应含 LumenPnP）
+M119            ; 查询限位状态
+G28             ; 全轴归位（先确认限位接线正确再执行！）
+```
+
+一切正常后，就可以在 OpenPnP 里把机器接入了。
+
+**飞达呢？** 飞达固件的构建/烧录流程相同，只是要换配置和 env——
+完整步骤见下一节「构建与烧录 → 程序二」。
 
 ---
 
@@ -174,9 +333,12 @@ qingwa-pnp-marlin/
   推荐用 **VS Code + PlatformIO IDE** 或 Marlin 的 **Auto Build** 插件/脚本
   （`buildroot/share/vscode/auto_build.py`，或 `process-palette.json` 定义的
   「PIO Build」命令）。
-- 默认构建目标已经设为 REV5 主板，无需额外选择。
+- 默认构建目标已经设为 **REV5 主板**，无需额外选择。
 
-### 命令行
+### 程序一：主板固件（REV5，默认）
+
+`Marlin/` 根目录的 `Configuration.h` / `Configuration_adv.h` 就是激活的主板配置，
+直接构建即可：
 
 ```bash
 # 编译（默认 env 即 Opulo_Lumen_REV5）
@@ -194,6 +356,67 @@ pio device monitor -b 250000
 
 > 若修改了 `Configuration.h` 等配置，直接重新 `pio run` 即可；PlatformIO 会自动重建。
 
+### 程序二：飞达固件（REV3 / REV4）
+
+飞达与主板**共用同一份源码**，构建时把对应的飞达配置快照套用到 `Marlin/`
+根目录，再切换 env 编译。以 REV4 + 送料器 v3.1 为例：
+
+```bash
+# 1) 备份当前主板配置
+cp Marlin/Configuration.h    /tmp/mb_Configuration.h
+cp Marlin/Configuration_adv.h /tmp/mb_Configuration_adv.h
+
+# 2) 套用飞达配置（四选一，见上表）
+cp Marlin/rev4-v3.1-feeder-config/Configuration*.h Marlin/
+
+# 3) 编译飞达固件（产物在 .pio/build/Opulo_Lumen_REV4/）
+pio run -e Opulo_Lumen_REV4
+
+# 4) 烧录到飞达主控
+pio run -e Opulo_Lumen_REV4 -t upload
+
+# 5) 还原主板配置
+cp /tmp/mb_Configuration.h    Marlin/Configuration.h
+cp /tmp/mb_Configuration_adv.h Marlin/Configuration_adv.h
+```
+
+> - 换配置后首次编译会全量重建（不同配置的头文件依赖不同），属正常现象。
+> - 改用 `rev3-feeder-config` 时对应 `-e Opulo_Lumen_REV3`；
+>   改用 `rev4-v3.0-feeder-config` 或 `rev4-v3.1-feeder-pwm-aux-config` 时
+>   仍用 `-e Opulo_Lumen_REV4`。
+> - 提交代码前记得还原主板配置，保持 `Marlin/` 根目录始终是 REV5。
+
+### 烧录方式详解
+
+主板和飞达主控都是 STM32F407VET6，板级定义支持 4 种烧录协议
+（`stlink` / `dfu` / `jlink` / `blackmagic`），默认使用 **DFU**：
+
+**方式 A：DFU（推荐，只需一根 USB 线）**
+
+```bash
+# 1. 按住 BOOT0 → 短按 RESET → 松开 BOOT0，进入 DFU 模式
+#    （Windows 设备管理器应出现 "STM32 BOOTLOADER"）
+# 2. 烧录
+pio run -e Opulo_Lumen_REV5 -t upload          # 主板
+pio run -e Opulo_Lumen_REV4 -t upload          # 飞达（配置同上已套用）
+# 3. 拔插 USB 复位，固件即运行
+```
+
+若 DFU 设备识别异常，也可手动用 `dfu-util`：
+
+```bash
+dfu-util -a 0 -d 0483:df11 -D .pio/build/Opulo_Lumen_REV5/firmware.bin -s 0x08000000:leave
+```
+
+**方式 B：ST-Link（调试器，适合变砖救援）**
+
+```bash
+pio run -e Opulo_Lumen_REV5 -t upload --upload-protocol stlink
+```
+
+需要 4 根线：SWDIO / SWCLK / GND / 3.3V 接到板载 SWD 排针。
+固件损坏导致无法进 DFU 时，ST-Link 是唯一可靠的恢复手段。
+
 ### 跑官方测试（可选）
 
 ```bash
@@ -203,16 +426,56 @@ make tests-single-local TEST_TARGET=Opulo_Lumen_REV5
 
 ---
 
-## 🔧 配置与版本管理
+## 🔧 配置修改与版本管理
+
+### 配置文件的组织方式
 
 - **`Marlin/Configuration.h` / `Configuration_adv.h`**：当前仓库实际使用的激活配置
-  （对应 REV5 主板）。
-- **`Marlin/rev5-config/`**：与该激活配置一致的 REV5 快照，用于对照/归档。
-- **`Marlin/rev3-*` / `rev4-*` 目录**：历史主板与各代**送料器（Feeder）**硬件版本
-  的配置快照，升级/回退硬件时可按需取出使用。
+  （对应 REV5 **主板**，即默认构建目标）。
+- **`Marlin/rev5-config/`**：主板配置快照，用于对照/归档。
+- **`Marlin/rev3-*` / `rev4-*` 目录**：**飞达（Feeder）**固件的配置快照，
+  按主控代次与送料器硬件版本分四套（见「目录结构」一节的对照表）；
+  构建飞达固件时取出套用（步骤见「构建与烧录 → 程序二」）。
 - **`Marlin/config.ini`**：Marlin 的 ini 编译期配置入口
   （`[config:minimal/basic/advanced]`）。默认未启用（`ini_use_config = none`）；
   如需用 ini 方式维护配置可开启并按需组合。
+
+### 如何安全地修改配置（教程）
+
+想改运动参数（速度、加速度、电流）是最常见的需求，照下面做即可：
+
+1. **编辑配置**。绝大多数参数在 `Marlin/Configuration.h`，进阶项在
+   `Configuration_adv.h`。例如把 X/Y 默认速度从 7000 提到 8000 mm/s
+   （轴序：X / Y / Z / I / J）：
+
+   ```cpp
+   #define DEFAULT_MAX_FEEDRATE {8000, 8000, 1000, 50000, 50000}  // (mm/s)
+   ```
+
+2. **重新编译**：`pio run`。配置改动会触发增量重建。
+
+3. **参数生效方式二选一**：
+   - 烧录新固件后，执行 `M502`（载入固件默认值）+ `M500`（保存到 EEPROM）；
+   - 或不重刷固件，直接在串口发 `M203 X8000 Y8000` + `M500` 临时调整。
+
+**⚠️ 修改注释时千万注意**：配置文件里的部分注释是**机器可读的**，
+被 `schema.py` 解析用于生成配置元数据，改动它们会导致构建失败或配置项丢失：
+
+| 不能动的注释 | 原因 |
+|---|---|
+| `// @section xxx` | 章节分组键，翻译/改名会导致整段归类错位 |
+| `// :[0, 1, 2, 3]`、`// :{...}` | 选项列表，必须单行完整 |
+| `(mm)`、`(°C)`、`(seconds)` 等括号单位 | 会被提取为 units 字段 |
+| 温度传感器条目行（` -5 : MAX31865 ...`） | 每条必须独占一行 |
+| 字符串字面量、宏名、G 代码命令 | 直接影响固件行为 |
+
+改完配置建议跑一遍仓库自带的回归校验（详见
+`buildroot/scripts/README-config-i18n.md`）：
+
+```bash
+python buildroot/scripts/check-config-i18n.py          # 注释结构 + 预处理 + schema
+python buildroot/scripts/check-config-code-intact.py --ref HEAD  # 代码零改动确认
+```
 
 ### 关于本仓库固件版本基线
 
@@ -240,6 +503,15 @@ M42 P31 S0              ; AUX 引脚输出低
 M122                    ; 查看各轴 TMC 状态
 ```
 
+**飞达固件（另刷）的常用指令**——飞达把三个送带轮定义为旋转轴
+`A` / `B` / `C`（角度制），送带/退带就是转动它们：
+
+```gcode
+G1 A45 F2000            ; A 轮正转 45°（推进一格编带）
+G1 A-45 F2000           ; A 轮反转（退带）
+M114                    ; 查询当前各轴位置（旋转轴单位为度）
+```
+
 完整命令表见 [Marlin G-code 文档](https://marlinfw.org/docs/gcode/M000-M001.html)。
 
 ---
@@ -265,6 +537,44 @@ M122                    ; 查看各轴 TMC 状态
 
 贴片机不需要 3D 打印的挤出与加热功能。本固件在 `Configuration.h` 里
 `EXTRUDERS 0` 且所有温度传感器关闭，属预期行为，而非故障。
+</details>
+
+<details>
+<summary><b>怎么区分手上的飞达该刷哪套配置？</b></summary>
+
+看两个信息：① 飞达主控板丝印是 REV3 还是 REV4（决定 env）；② 送料器机构
+硬件版本是 v3.0 / v3.1（决定速度参数配置）。v3.0 用
+`rev4-v3.0-feeder-config`（慢速保守），v3.1 用 `rev4-v3.1-feeder-config`；
+若 AUX 风扇有啸叫想消除，改用 `rev4-v3.1-feeder-pwm-aux-config`（仅多开
+`FAST_PWM_FAN`，31.4 kHz）。不确定时先刷 v3.1 版本，参数偏保守不影响验证。
+</details>
+
+<details>
+<summary><b>飞达能单独连接电脑调试吗？</b></summary>
+
+可以。飞达固件同样使用 USB CDC 串口（`SERIAL_PORT -1`，250000 baud），
+用 USB 线把飞达主控接到电脑后 `pio device monitor -b 250000`，
+发 `M115` 应回报飞达固件信息。每台飞达在上位机里是一个独立串口设备。
+刷飞达固件的完整流程见「构建与烧录 → 程序二」。
+</details>
+
+<details>
+<summary><b>按了 BOOT0 + RESET 仍找不到 DFU 设备？</b></summary>
+
+依次排查：① 确认按住 BOOT0 的时机是**上电/复位瞬间**（先按住 BOOT0 再按
+RESET）；② 换一根确定支持数据的 USB 线；③ Linux 下确认有 `dfu-util` 权限
+（udev 规则或 sudo）；④ 若仍无法进入 DFU，说明引导程序可能被覆盖，
+用 **ST-Link** 方式重刷（见「烧录方式详解」）。
+</details>
+
+<details>
+<summary><b>改了配置注释后构建报错 / 配置项丢失？</b></summary>
+
+大概率是动了**机器可读注释**（`@section` 标记、`:[...]` 选项列表、
+括号单位、传感器条目等，详见「配置修改与版本管理」的注意事项表）。
+对照 git 恢复误改的行：`git diff Marlin/Configuration.h`，
+再跑 `python buildroot/scripts/check-config-i18n.py` 确认 schema 项数
+恢复到 2444 项基线。
 </details>
 
 ---

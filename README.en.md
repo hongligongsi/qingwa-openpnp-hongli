@@ -18,9 +18,11 @@
 ## Table of Contents
 
 - [📖 Introduction](#-introduction)
+- [🧩 System Architecture: One Source Tree, Two Firmwares](#-system-architecture-one-source-tree-two-firmwares)
 - [✨ Features](#-features)
 - [🧱 Hardware & Pinout](#-hardware--pinout)
 - [🏗 Repository Layout](#-repository-layout)
+- [🚀 Quick Start](#-quick-start)
 - [⚙️ Building & Flashing](#️-building--flashing)
 - [🔧 Configuration & Versioning](#-configuration--versioning)
 - [🧰 Common G-code](#-common-g-code)
@@ -35,10 +37,33 @@ This project is the firmware for the **Qingwa (Frog) Pick-and-Place machine**. I
 *not* a 3D-printer firmware — it adapts the open-source **Marlin** firmware into the
 **motion controller** of an SMT pick-and-place (PnP) machine.
 
-It targets the **Opulo LumenPnP Motherboard REV05**, based on a **STM32F407VET6**
-(ARM Cortex-M4, 512 KB Flash / 192 KB SRAM). The REV5 board is a six-axis PnP
-controller that provides TMC stepper interfaces, endstops, feeder signals, RS485 and
-RGB LED strips out of the box.
+### What makes up the machine?
+
+A complete Qingwa PnP machine has two major parts, each running its own firmware
+built from the **same source tree**:
+
+1. **Motherboard** — the "brain and limbs" of the machine. Based on the
+   **Opulo LumenPnP Motherboard REV05** (MCU: **STM32F407VET6**, ARM Cortex-M4,
+   512 KB Flash / 192 KB SRAM), it drives gantry X/Y positioning, Z lift,
+   dual-motor sync (X/Y2), endstop sensing, and camera/lighting/vacuum peripherals.
+   It is the **default build target** of this repo.
+
+2. **Feeder (electric tape feeder)** — indexes component tape pockets into the pick
+   position. Each feeder contains an **Opulo feeder controller board (REV3 or
+   REV4)**, also running Marlin, using rotational axes to drive the sprocket wheel.
+   Feeder firmware is built from the `rev*-feeder-config` snapshots in this repo
+   (see the tutorial below).
+
+The firmware talks G-code / status over USB serial, so it can be driven by host
+software such as OpenPnP for automated assembly jobs. The host sees **the motherboard
+and each feeder as separate serial devices**.
+
+> This repository is customized from upstream **Marlin 2.1.x** and the
+> **Opulo LumenPnP** open hardware/software ecosystem, keeping Marlin's powerful
+> motion planning and HAL architecture while adding the Opulo board definitions and
+> per-revision configuration snapshots.
+
+### What does the motherboard firmware remove?
 
 To behave as a pure motion controller, the build removes 3D-printing logic at the
 configuration level:
@@ -51,13 +76,50 @@ configuration level:
 | Driver type | TMC2209 on all axes (single-wire UART) |
 | Serial | USB CDC (`SERIAL_PORT -1`) @ 250000 |
 
-The firmware talks G-code / status over USB serial, so it can be driven by host
-software such as OpenPnP for automated assembly jobs.
+---
 
-> This repository is customized from upstream **Marlin 2.1.x** and the
-> **Opulo LumenPnP** open hardware/software ecosystem, keeping Marlin's powerful
-> motion planning and HAL architecture while adding the Opulo board definitions and
-> per-revision configuration snapshots.
+## 🧩 System Architecture: One Source Tree, Two Firmwares
+
+This repo maintains **a single Marlin source tree**; both the motherboard firmware
+and the feeder firmware are built from it — the only difference is which
+**configuration files** (`Configuration.h` / `Configuration_adv.h`) and which
+**build environment (env)** are used:
+
+```
+                  ┌────────────────────────────────┐
+                  │   Host (OpenPnP) / manual G-code │
+                  └──────┬──────────────────┬──────┘
+              USB serial │                  │ USB serial (one port per feeder)
+                         ▼                  ▼
+              ┌──────────────────┐  ┌──────────────────┐
+              │ Motherboard fw   │  │ Feeder firmware ×N│
+              │ REV5 controller  │  │ REV3/REV4 ctrl   │
+              │ env: REV5        │  │ env: REV3/REV4   │
+              │ cfg: Marlin/ root│  │ cfg: rev*-feeder-config/ │
+              ├──────────────────┤  ├──────────────────┤
+              │ · X/Y/Y2 gantry  │  │ · rotational axes │
+              │ · Z lift         │  │   drive sprockets │
+              │ · endstops/DIAG  │  │ · feed/rewind     │
+              │ · camera/LED/vac │  │ · EXTRUDERS 0     │
+              └──────────────────┘  └──────────────────┘
+```
+
+**Which firmware do I pick?**
+
+| Target | env | Config |
+|---|---|---|
+| Machine motherboard (REV05) | `Opulo_Lumen_REV5` (default, just `pio run`) | `Marlin/` root (nothing to do) |
+| Feeder (REV4 controller) | `Opulo_Lumen_REV4` | one of `rev4-v3.0 / v3.1 / v3.1-pwm-aux` |
+| Feeder (REV3 controller, legacy) | `Opulo_Lumen_REV3` | `rev3-feeder-config` |
+
+How to choose among the four feeder configs:
+
+- `rev4-v3.0-feeder-config`: v3.0 hardware, conservative feed speed (200 mm/s);
+- `rev4-v3.1-feeder-config`: v3.1 hardware, feed speed raised to 1000 mm/s;
+- `rev4-v3.1-feeder-pwm-aux-config`: same as v3.1 plus `FAST_PWM_FAN`
+  (AUX fan at 31.4 kHz, eliminates whine);
+- `rev3-feeder-config`: legacy REV3 feeder controller (substantially different
+  pins/features from the REV4 series).
 
 ---
 
@@ -130,40 +192,58 @@ software such as OpenPnP for automated assembly jobs.
 
 ## 🏗 Repository Layout
 
+This repo ships **two firmware programs** sharing the same Marlin source tree;
+they differ only in configuration files and the PlatformIO environment (env):
+
+| Program | Target hardware | MCU | Build env | Config source |
+|---|---|---|---|---|
+| **Motherboard firmware** | LumenPnP Motherboard REV5 (PnP main board) | STM32F407VET6 | `Opulo_Lumen_REV5` (default) | Active config in `Marlin/` root (snapshot: `rev5-config/`) |
+| **Feeder firmware** | Electric feeder, REV4 controller | STM32F407VET6 | `Opulo_Lumen_REV4` | One of the three `Marlin/rev4-*-feeder-config/` folders |
+| **Feeder firmware (legacy)** | Electric feeder, REV3 controller | STM32F407VET6 | `Opulo_Lumen_REV3` | `Marlin/rev3-feeder-config/` |
+
+Board definitions (pins / clock / upload protocol) live in
+`buildroot/share/PlatformIO/boards/marlin_opulo_lumen_rev{3,4,5}.json`;
+pin maps in `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV{3,4,5}.h`.
+
 ```text
 qingwa-pnp-marlin/
 ├── .devcontainer/              # VS Code dev container (build env in one click)
 ├── .github/                    # GitHub CI / community config (test-builds etc.)
 ├── .trellis/                   # AI-assisted development workflow scaffold (optional)
-├── Marlin/                     # ⭐ Firmware source & configuration (core)
-│   ├── Configuration.h         #   Active configuration (REV5)
+├── Marlin/                     # ⭐ Firmware source & configuration (shared by both)
+│   ├── Configuration.h         #   Active configuration = Motherboard REV5
 │   ├── Configuration_adv.h     #   Advanced configuration
 │   ├── config.ini              #   Compile-time config via ini (disabled by default)
 │   ├── Makefile                #   Make entry for pio/arduino
 │   ├── Version.h               #   Version strings (overridable at build time)
-│   ├── rev3-feeder-config/     #   Legacy: REV3 feeder config snapshot
-│   ├── rev4-v3.0-feeder-config/#   Legacy: REV4 + feeder v3.0 snapshot
-│   ├── rev4-v3.1-feeder-config/#   Legacy: REV4 + feeder v3.1 snapshot
-│   ├── rev4-v3.1-feeder-pwm-aux-config/  # REV4 v3.1 + PWM/AUX snapshot
-│   ├── rev5-config/            #   REV5 snapshot matching the active config
-│   └── src/                    #   Marlin core source
+│   │
+│   │   ── Motherboard configuration ──
+│   ├── rev5-config/            #   REV5 motherboard snapshot (reference/archive)
+│   │
+│   │   ── Feeder configurations (pick one) ──
+│   ├── rev3-feeder-config/     #   Feeder REV3 controller (legacy feeder)
+│   ├── rev4-v3.0-feeder-config/#   Feeder REV4 controller + feeder v3.0 (slow params)
+│   ├── rev4-v3.1-feeder-config/#   Feeder REV4 controller + feeder v3.1 (fast params)
+│   ├── rev4-v3.1-feeder-pwm-aux-config/  # Same as v3.1 + FAST_PWM_FAN (AUX fan 31.4 kHz)
+│   │
+│   └── src/                    #   Marlin core source (shared, board-agnostic)
 │       ├── MarlinCore.cpp|.h   #     Firmware entry point
 │       ├── HAL/                #     Hardware Abstraction Layer (STM32 etc.)
 │       ├── core/               #     boards.h board IDs / macros
 │       ├── pins/               #     Per-board pin definitions
-│       │   └── stm32f4/pins_OPULO_LUMEN_REV5.h   # ← REV5 pins
+│       │   └── stm32f4/pins_OPULO_LUMEN_REV5.h   # ← REV5 pins (REV3/REV4 also present)
 │       ├── module/             #     planner / stepper / endstop …
 │       ├── gcode/              #     G/M-code parsing & execution
 │       ├── feature/ libs/ lcd/ sd/ inc/ tests/
 ├── buildroot/                  # PlatformIO board support / scripts / tests
 │   ├── share/PlatformIO/
-│   │   ├── boards/marlin_opulo_lumen_rev5.json   # REV5 board JSON
-│   │   └── scripts/            #   configuration.py build scripts
+│   │   ├── boards/             #   Board JSONs: marlin_opulo_lumen_rev3/4/5.json
+│   │   └── scripts/            #   configuration.py build scripts + config-i18n checkers
 │   ├── share/vscode/auto_build.py                #   Auto Build (PIO Build)
 │   └── tests/                  #   make tests-all-local etc.
 ├── config/  docker/  docs/     # Docs / Docker / dev docs (Bresenham, Serial…)
 ├── ini/                        # PlatformIO env matrix (grouped by MCU)
-│   └── stm32f4.ini             #   contains [env:Opulo_Lumen_REV5]
+│   └── stm32f4.ini             #   contains [env:Opulo_Lumen_REV3] / REV4 / REV5
 ├── .editorconfig  .gitattributes
 ├── platformio.ini              # ⭐ PlatformIO entry (default_envs = Opulo_Lumen_REV5)
 ├── Makefile                    # make shortcuts
@@ -172,6 +252,92 @@ qingwa-pnp-marlin/
 ├── LICENSE                     # GPL-3.0
 └── README.md / README.en.md    # Multilingual docs (Chinese by default)
 ```
+
+### Key differences between the two programs
+
+- **Motherboard firmware (REV5)**: drives the PnP machine's X/Y motion axes,
+  endstops, camera/lighting interfaces, etc. — the default build target.
+- **Feeder firmware (REV3/REV4)**: `EXTRUDERS 0` (no extruder/hotend) and
+  declares `AXIS4/AXIS5/AXIS6` as **rotational axes** (`AXISn_ROTATES`) to
+  drive the feed sprocket wheels; feed-speed parameters differ per hardware
+  revision.
+- Actual differences among the four feeder configs are tiny:
+  - `rev4-v3.0` vs `rev4-v3.1`: feed-speed parameters only
+    (`DEFAULT_MAX_FEEDRATE` 200→1000 mm/s, `HOMING_FEEDRATE` 100→200 mm/min);
+  - `rev4-v3.1-pwm-aux` vs `rev4-v3.1`: only adds `FAST_PWM_FAN`
+    (`FAST_PWM_FAN_FREQUENCY 31400`, silent high-frequency AUX fan);
+  - `rev3` vs the `rev4` series differ substantially (different controller
+    generation — pin map and feature set).
+
+---
+
+## 🚀 Quick Start
+
+Getting a motherboard up and running takes 5 steps (about 15 minutes, excluding
+the first full build):
+
+### Step 1: Install the build environment
+
+1. Install [VS Code](https://code.visualstudio.com/) and the
+   [PlatformIO IDE extension](https://marketplace.visualstudio.com/items?itemName=PlatformIO.platformio-ide)
+   (it auto-installs PlatformIO Core and the STM32 toolchain); or install only the
+   command-line [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation.html).
+2. Clone this repo:
+   ```bash
+   git clone https://github.com/hongligongsi/qingwa-openpnp-hongli.git
+   cd qingwa-openpnp-hongli
+   ```
+
+### Step 2: Build the motherboard firmware
+
+Nothing to change — the default config is the REV5 motherboard:
+
+```bash
+pio run
+```
+
+The first build downloads library dependencies and compiles everything (a few
+minutes); later builds are incremental. Success shows `SUCCESS` plus flash/RAM
+stats (Flash ≈ 22%, RAM ≈ 7%); artifacts land in
+`.pio/build/Opulo_Lumen_REV5/firmware.bin` (and `.elf`).
+
+### Step 3: Put the board into bootloader mode
+
+The STM32 ships with a built-in **DFU bootloader** (USB ID `0483:df11`):
+
+1. Hold the **BOOT0** button;
+2. Press **RESET** once, then release BOOT0;
+3. Plug in USB — the device should appear as `STM32 BOOTLOADER` in Device
+   Manager (Windows) or `lsusb` (Linux).
+
+> If the board already runs this firmware, `pio run -t upload` usually works
+> directly — PlatformIO detects the DFU device automatically.
+
+### Step 4: Flash
+
+```bash
+pio run -e Opulo_Lumen_REV5 -t upload
+```
+
+`File downloaded successfully` means done; power-cycle USB and the firmware runs.
+
+### Step 5: Verify
+
+```bash
+# Open a serial monitor (baud rate 250000)
+pio device monitor -b 250000
+```
+
+```gcode
+M115            ; reports firmware version and machine name (LumenPnP)
+M119            ; endstop states
+G28             ; home all axes (verify endstop wiring first!)
+```
+
+Once verified, connect the machine in OpenPnP.
+
+**What about feeders?** Same build/flash flow, different config and env — see
+"Building & Flashing → Program 2" below.
 
 ---
 
@@ -183,9 +349,13 @@ qingwa-pnp-marlin/
   the easiest path is **VS Code + PlatformIO IDE** or Marlin's **Auto Build**
   script (`buildroot/share/vscode/auto_build.py`, or the **PIO Build** command from
   `process-palette.json`).
-- The default build environment is already set to the REV5 board — no extra setup.
+- The default build environment is already set to the **REV5 motherboard** — no
+  extra setup.
 
-### Command line
+### Program 1: Motherboard firmware (REV5, default)
+
+The `Configuration.h` / `Configuration_adv.h` files in the `Marlin/` root are the
+active motherboard config — just build:
 
 ```bash
 # Build (default env is Opulo_Lumen_REV5)
@@ -204,6 +374,72 @@ pio device monitor -b 250000
 > After editing `Configuration.h` etc., just run `pio run` again — PlatformIO
 > rebuilds automatically.
 
+### Program 2: Feeder firmware (REV3 / REV4)
+
+The feeder shares the same source tree as the motherboard; apply the desired
+feeder config snapshot into the `Marlin/` root, then switch the env. Example
+with REV4 + feeder v3.1:
+
+```bash
+# 1) Back up the current motherboard config
+cp Marlin/Configuration.h    /tmp/mb_Configuration.h
+cp Marlin/Configuration_adv.h /tmp/mb_Configuration_adv.h
+
+# 2) Apply a feeder config (pick one, see the table above)
+cp Marlin/rev4-v3.1-feeder-config/Configuration*.h Marlin/
+
+# 3) Build the feeder firmware (output in .pio/build/Opulo_Lumen_REV4/)
+pio run -e Opulo_Lumen_REV4
+
+# 4) Flash to the feeder controller
+pio run -e Opulo_Lumen_REV4 -t upload
+
+# 5) Restore the motherboard config
+cp /tmp/mb_Configuration.h    Marlin/Configuration.h
+cp /tmp/mb_Configuration_adv.h Marlin/Configuration_adv.h
+```
+
+> - The first build after a config swap is a full rebuild (different header
+>   dependencies) — that is normal.
+> - For `rev3-feeder-config` use `-e Opulo_Lumen_REV3`;
+>   `rev4-v3.0-feeder-config` and `rev4-v3.1-feeder-pwm-aux-config` still use
+>   `-e Opulo_Lumen_REV4`.
+> - Restore the motherboard config before committing — keep the `Marlin/` root
+>   on REV5 at all times.
+
+### Flashing methods in detail
+
+Both the motherboard and feeder controllers are STM32F407VET6; the board
+definition supports 4 upload protocols (`stlink` / `dfu` / `jlink` /
+`blackmagic`), defaulting to **DFU**:
+
+**Method A: DFU (recommended, USB cable only)**
+
+```bash
+# 1. Hold BOOT0 → tap RESET → release BOOT0 to enter DFU mode
+#    (Device Manager should show "STM32 BOOTLOADER")
+# 2. Flash
+pio run -e Opulo_Lumen_REV5 -t upload          # motherboard
+pio run -e Opulo_Lumen_REV4 -t upload          # feeder (config applied above)
+# 3. Unplug/replug USB to reset and run
+```
+
+If the DFU device is not detected, use `dfu-util` directly:
+
+```bash
+dfu-util -a 0 -d 0483:df11 -D .pio/build/Opulo_Lumen_REV5/firmware.bin -s 0x08000000:leave
+```
+
+**Method B: ST-Link (debugger; best for unbricking)**
+
+```bash
+pio run -e Opulo_Lumen_REV5 -t upload --upload-protocol stlink
+```
+
+Requires 4 wires: SWDIO / SWCLK / GND / 3.3V to the onboard SWD header.
+If the firmware is broken and DFU can no longer be entered, ST-Link is the
+only reliable recovery path.
+
 ### Run upstream tests (optional)
 
 ```bash
@@ -216,14 +452,57 @@ make tests-single-local TEST_TARGET=Opulo_Lumen_REV5
 ## 🔧 Configuration & Versioning
 
 - **`Marlin/Configuration.h` / `Configuration_adv.h`**: the configuration actually
-  used by this repo (for the REV5 board).
-- **`Marlin/rev5-config/`**: a snapshot matching the active config, kept for
+  used by this repo (the REV5 **motherboard**, the default build target).
+- **`Marlin/rev5-config/`**: motherboard config snapshot, kept for
   reference/archival.
-- **`Marlin/rev3-*` / `rev4-*` folders**: config snapshots for older boards and each
-  **feeder** hardware revision — pull them out when upgrading/downgrading hardware.
+- **`Marlin/rev3-*` / `rev4-*` folders**: config snapshots for the **feeder**
+  firmware, four sets by controller generation and feeder hardware revision
+  (see the table in "Repository Layout"); apply one when building the feeder
+  firmware (see "Building & Flashing → Program 2").
 - **`Marlin/config.ini`**: Marlin compile-time config via ini
   (`[config:minimal/basic/advanced]`). Disabled by default
   (`ini_use_config = none`); enable it only if you prefer ini-driven config.
+
+### How to modify the configuration safely (tutorial)
+
+Tuning motion parameters (speed / acceleration / current) is the most common
+change. Do it like this:
+
+1. **Edit the config.** Most parameters live in `Marlin/Configuration.h`,
+   advanced ones in `Configuration_adv.h`. For example, raising X/Y default
+   speed from 7000 to 8000 mm/s (axis order: X / Y / Z / I / J):
+
+   ```cpp
+   #define DEFAULT_MAX_FEEDRATE {8000, 8000, 1000, 50000, 50000}  // (mm/s)
+   ```
+
+2. **Rebuild**: `pio run`. Config changes trigger an incremental rebuild.
+
+3. **Make the values take effect — either**:
+   - flash the new firmware, then send `M502` (load firmware defaults) +
+     `M500` (save to EEPROM);
+   - or without reflashing, send `M203 X8000 Y8000` + `M500` over serial for a
+     runtime change.
+
+**⚠️ Be careful with comments**: some comments in the config files are
+**machine-readable** — parsed by `schema.py` to generate config metadata.
+Breaking them fails the build or silently drops config items:
+
+| Never touch | Why |
+|---|---|
+| `// @section xxx` | section grouping key; renaming misclassifies the whole block |
+| `// :[0, 1, 2, 3]`, `// :{...}` | option lists; must stay intact on one line |
+| parenthesized units `(mm)` `(°C)` `(seconds)` | extracted as schema units fields |
+| temperature sensor entry lines (` -5 : MAX31865 ...`) | each entry must stay on its own line |
+| string literals, macro names, G-code commands | directly affect firmware behavior |
+
+After editing, run the repo's regression checkers (see
+`buildroot/scripts/README-config-i18n.md`):
+
+```bash
+python buildroot/scripts/check-config-i18n.py          # comment structure + preprocess + schema
+python buildroot/scripts/check-config-code-intact.py --ref HEAD  # confirm zero code changes
+```
 
 ### Firmware baseline
 
@@ -249,6 +528,16 @@ M42 P31 S0              ; AUX pin low
 
 ; TMC driver diagnostics
 M122                    ; TMC status for all axes
+```
+
+**Feeder firmware (flashed separately)** — the feeder maps its three sprocket
+wheels to rotational axes `A` / `B` / `C` (in degrees); feeding/rewinding is
+just rotating them:
+
+```gcode
+G1 A45 F2000            ; rotate wheel A forward 45° (advance one pocket)
+G1 A-45 F2000           ; rotate wheel A backward (rewind)
+M114                    ; report positions (rotational axes in degrees)
 ```
 
 See the [Marlin G-code docs](https://marlinfw.org/docs/gcode/M000-M001.html) for the
@@ -278,6 +567,49 @@ machine name (LumenPnP).
 
 A PnP machine doesn't need extruder/heating. This firmware sets `EXTRUDERS 0` and
 disables all temperature sensors in `Configuration.h` — that's by design, not a fault.
+</details>
+
+<details>
+<summary><b>Which feeder config should I flash?</b></summary>
+
+Check two things: ① the controller board silkscreen — REV3 or REV4 (picks the
+env); ② the feeder mechanism hardware version — v3.0 or v3.1 (picks the speed
+config). v3.0 → `rev4-v3.0-feeder-config` (conservative), v3.1 →
+`rev4-v3.1-feeder-config`; if the AUX fan whines, switch to
+`rev4-v3.1-feeder-pwm-aux-config` (only adds `FAST_PWM_FAN`, 31.4 kHz).
+When unsure, flash the v3.1 config first — conservative params won't hurt
+validation.
+</details>
+
+<details>
+<summary><b>Can I debug a feeder directly from my computer?</b></summary>
+
+Yes. The feeder firmware also uses USB CDC serial (`SERIAL_PORT -1`, 250000
+baud). Plug the feeder controller into the computer via USB and run
+`pio device monitor -b 250000`; `M115` reports the feeder firmware info. Each
+feeder appears to the host as an independent serial device. The full flashing
+flow is in "Building & Flashing → Program 2".
+</details>
+
+<details>
+<summary><b>BOOT0 + RESET but no DFU device shows up?</b></summary>
+
+Check in order: ① BOOT0 must be held **at power-on/reset moment** (hold BOOT0
+first, then tap RESET); ② try a USB cable that definitely carries data; ③ on
+Linux check `dfu-util` permissions (udev rule or sudo); ④ if DFU still cannot
+be entered the bootloader may be overwritten — reflash via **ST-Link**
+(see "Flashing methods in detail").
+</details>
+
+<details>
+<summary><b>Build fails or config items go missing after editing comments?</b></summary>
+
+You most likely touched **machine-readable comments** (`@section` markers,
+`:[...]` option lists, parenthesized units, sensor entries — see the warning
+table in "Configuration & Versioning"). Restore the mis-edited lines via
+`git diff Marlin/Configuration.h`, then run
+`python buildroot/scripts/check-config-i18n.py` to confirm the schema count is
+back to the 2444-item baseline.
 </details>
 
 ---
