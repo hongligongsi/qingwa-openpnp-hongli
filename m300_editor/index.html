@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>M300 蜂鸣器旋律编辑器</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 4px;
+      color: #89b4fa;
+    }
+
+    .subtitle {
+      color: #a6adc8;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #313244;
+      border-radius: 8px;
+    }
+
+    .toolbar button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .btn-primary {
+      background: #a6e3a1;
+      color: #1e1e2e;
+    }
+
+    .btn-primary:hover {
+      background: #94e2d5;
+    }
+
+    .btn-danger {
+      background: #f38ba8;
+      color: #1e1e2e;
+    }
+
+    .btn-danger:hover {
+      background: #eba0ac;
+    }
+
+    .btn-normal {
+      background: #585b70;
+      color: #cdd6f4;
+    }
+
+    .btn-normal:hover {
+      background: #6c7086;
+    }
+
+    .btn-info {
+      background: #89b4fa;
+      color: #1e1e2e;
+    }
+
+    .btn-info:hover {
+      background: #b4befe;
+    }
+
+    .toolbar label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #a6adc8;
+    }
+
+    .toolbar input[type=range] {
+      width: 140px;
+    }
+
+    .preset-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .preset-bar button {
+      padding: 6px 12px;
+      background: #45475a;
+      color: #cdd6f4;
+      border: 1px solid #585b70;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .preset-bar button:hover {
+      background: #585b70;
+    }
+
+    .preset-label {
+      color: #a6adc8;
+      font-size: 13px;
+      margin-right: 4px;
+      align-self: center;
+    }
+
+    .section {
+      background: #313244;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .section h2 {
+      font-size: 15px;
+      color: #89b4fa;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      background: #585b70;
+      color: #cdd6f4;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: normal;
+    }
+
+    /* 时间轴可视化 */
+    .timeline {
+      height: 60px;
+      background: #181825;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .timeline-note {
+      position: absolute;
+      top: 8px;
+      height: 44px;
+      background: linear-gradient(180deg, #a6e3a1, #94e2d5);
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      transition: transform 0.1s;
+    }
+
+    .timeline-note:hover {
+      transform: scaleY(1.1);
+    }
+
+    .timeline-note.silent {
+      background: linear-gradient(180deg, #585b70, #45475a);
+    }
+
+    .timeline-note .label {
+      position: absolute;
+      bottom: -16px;
+      left: 0;
+      font-size: 10px;
+      color: #a6adc8;
+      white-space: nowrap;
+    }
+
+    .playhead {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #f38ba8;
+      display: none;
+      pointer-events: none;
+    }
+
+    /* 音符表格 */
+    .notes-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .notes-table th {
+      text-align: left;
+      padding: 8px 10px;
+      background: #45475a;
+      color: #cdd6f4;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .notes-table td {
+      padding: 6px;
+      border-bottom: 1px solid #45475a;
+    }
+
+    .notes-table input {
+      width: 100%;
+      padding: 6px 8px;
+      background: #181825;
+      border: 1px solid #45475a;
+      border-radius: 4px;
+      color: #cdd6f4;
+      font-size: 13px;
+      font-family: monospace;
+    }
+
+    .notes-table input:focus {
+      outline: none;
+      border-color: #89b4fa;
+    }
+
+    .notes-table input[type=number] {
+      width: 110px;
+    }
+
+    .notes-table .idx {
+      color: #a6adc8;
+      font-size: 12px;
+      text-align: center;
+      width: 40px;
+    }
+
+    .notes-table .actions {
+      white-space: nowrap;
+      width: 150px;
+    }
+
+    .notes-table .actions button {
+      padding: 4px 8px;
+      margin: 0 2px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .act-del {
+      background: #f38ba8;
+      color: #1e1e2e;
+    }
+
+    .act-up,
+    .act-down {
+      background: #585b70;
+      color: #cdd6f4;
+    }
+
+    .act-play {
+      background: #a6e3a1;
+      color: #1e1e2e;
+    }
+
+    /* 导出区 */
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px;
+      background: #181825;
+      border: 1px solid #45475a;
+      border-radius: 6px;
+      color: #a6e3a1;
+      font-family: "Consolas", monospace;
+      font-size: 12px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .export-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .stats {
+      font-size: 12px;
+      color: #a6adc8;
+      margin-top: 8px;
+    }
+
+    .stats span {
+      color: #89b4fa;
+      font-weight: 600;
+    }
+
+    /* 自定义波形编辑器 */
+    .wave-editor {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .wave-canvas-wrap {
+      position: relative;
+      background: #181825;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    #waveCanvas {
+      display: block;
+      width: 100%;
+      height: 180px;
+      touch-action: none;
+    }
+
+    .wave-hint {
+      font-size: 11px;
+      color: #6c7086;
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      pointer-events: none;
+    }
+
+    .wave-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .wave-controls button {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .wave-controls select,
+    .wave-controls input[type=number] {
+      padding: 6px 8px;
+      background: #181825;
+      border: 1px solid #45475a;
+      border-radius: 4px;
+      color: #cdd6f4;
+      font-size: 13px;
+    }
+
+    .harmonics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .harmonic-item {
+      background: #181825;
+      border-radius: 4px;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+
+    .harmonic-item label {
+      display: block;
+      color: #a6adc8;
+      margin-bottom: 4px;
+    }
+
+    .harmonic-item input[type=range] {
+      width: 100%;
+    }
+
+    .harmonic-item .hval {
+      color: #89b4fa;
+      font-family: monospace;
+    }
+
+    .notice-box {
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: #181825;
+      border-left: 3px solid #fab387;
+      border-radius: 4px;
+      font-size: 12.5px;
+      color: #bac2de;
+      line-height: 1.7;
+    }
+
+    .notice-box b {
+      color: #fab387;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>🎵 M300 蜂鸣器旋律编辑器</h1>
+  <p class="subtitle">编辑 Marlin 固件的开机蜂鸣旋律（STARTUP_COMMANDS），支持实时预览与导出 M300 G-code</p>
+
+  <div class="toolbar">
+    <button class="btn-primary" id="btnPlay" onclick="playAll()">▶ 播放</button>
+    <button class="btn-danger" id="btnStop" onclick="stopAll()">⏹ 停止</button>
+    <button class="btn-normal" onclick="addNote()">＋ 添加音符</button>
+    <button class="btn-normal" onclick="addSilence()">＋ 添加静音</button>
+    <button class="btn-info" onclick="exportToGcode()">⬇ 导出 G-code</button>
+    <label>音量: <input type="range" id="volume" min="0" max="100" value="30"></label>
+    <label>波形:
+      <select id="waveform"
+        style="padding:6px;border-radius:4px;background:#181825;color:#cdd6f4;border:1px solid #45475a;"
+        onchange="onWaveformChange()">
+        <option value="square">方波 (蜂鸣器)</option>
+        <option value="sine">正弦波</option>
+        <option value="triangle">三角波</option>
+        <option value="sawtooth">锯齿波</option>
+        <option value="custom">✨ 自定义波形</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="preset-bar">
+    <span class="preset-label">预设:</span>
+    <button onclick="loadPreset('beep')">简单蜂鸣</button>
+    <button onclick="loadPreset('morse')">摩斯节奏</button>
+    <button onclick="loadPreset('do-mi-sol')">Do-Mi-Sol</button>
+    <button onclick="loadPreset('startup')">开机旋律</button>
+    <button onclick="loadPreset('marlin')">Marlin 开机</button>
+    <button onclick="clearAll()">清空</button>
+  </div>
+
+  <div class="section">
+    <h2>时间轴 <span class="badge" id="totalTime">总时长: 0 ms</span></h2>
+    <div class="timeline" id="timeline">
+      <div class="playhead" id="playhead"></div>
+    </div>
+  </div>
+
+  <div class="section" id="customWaveSection" style="display:none;">
+    <h2>🎨 自定义波形编辑器 <span class="badge" id="waveStatus">方波</span></h2>
+    <div class="wave-editor">
+      <div class="wave-canvas-wrap">
+        <canvas id="waveCanvas"></canvas>
+        <div class="wave-hint">拖动鼠标绘制一个周期的波形 | 点击波形图可试听</div>
+      </div>
+      <div class="wave-controls">
+        <button class="btn-primary" onclick="applyCustomWave()">应用波形</button>
+        <button class="btn-normal" onclick="resetWave('sine')">正弦</button>
+        <button class="btn-normal" onclick="resetWave('square')">方波</button>
+        <button class="btn-normal" onclick="resetWave('triangle')">三角</button>
+        <button class="btn-normal" onclick="resetWave('sawtooth')">锯齿</button>
+        <button class="btn-normal" onclick="resetWave('flat')">归零</button>
+        <button class="btn-info" onclick="testWave()">🔊 试听 1 秒</button>
+        <label>谐波数:
+          <input type="number" id="harmonicCount" value="16" min="1" max="64" style="width:60px;">
+        </label>
+        <label>基础频率:
+          <input type="number" id="testFreq" value="440" min="20" max="4000" style="width:70px;"> Hz
+        </label>
+      </div>
+      <div class="harmonics-grid" id="harmonicsGrid"></div>
+      <div class="notice-box">
+        <b>💡 说明：</b>这是网页端的<b>预览音色</b>，用于在电脑上模拟不同波形的听感。实际烧录到 Marlin 固件后，蜂鸣器（压电蜂鸣器）只能输出<b>方波</b>，硬件本身不支持自定义波形——M300
+        指令只控制<b>频率</b>和<b>时长</b>。这个编辑器的核心价值是让你在电脑上调试旋律节奏，导出 G-code 后刷入固件即可。
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>音符列表 <span class="badge" id="noteCount">0 个音符</span></h2>
+    <table class="notes-table">
+      <thead>
+        <tr>
+          <th class="idx">#</th>
+          <th>频率 (Hz)</th>
+          <th>时长 (ms)</th>
+          <th>音名</th>
+          <th class="actions">操作</th>
+        </tr>
+      </thead>
+      <tbody id="notesBody"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>G-code 导出</h2>
+    <textarea id="gcodeOutput" placeholder="点击「导出 G-code」生成..."></textarea>
+    <div class="export-actions">
+      <button class="btn-info" onclick="exportToGcode()">重新生成</button>
+      <button class="btn-normal" onclick="copyGcode()">📋 复制</button>
+      <button class="btn-normal" onclick="importGcode()">⬆ 从下方导入</button>
+    </div>
+    <textarea id="gcodeInput"
+      placeholder="在此粘贴 M300 G-code 后点「从下方导入」&#10;例如: M300 S2000 P100\nG4 P900\nM300 S2500 P1000"
+      style="margin-top:10px;"></textarea>
+  </div>
+
+  <script>
+    // 音符数据结构: { freq: Hz (0=静音), dur: ms }
+    let notes = [];
+    let audioCtx = null;
+    let isPlaying = false;
+    let playTimers = [];
+
+    // 音名频率对照表 (A4 = 440Hz)
+    const NOTE_TABLE = {
+      'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23,
+      'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+      'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46,
+      'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77,
+      'C6': 1046.50
+    };
+
+    function freqToNote(freq) {
+      if (!freq || freq <= 0) return '静音';
+      let best = '', bestDiff = Infinity;
+      for (const [name, f] of Object.entries(NOTE_TABLE)) {
+        const diff = Math.abs(f - freq);
+        if (diff < bestDiff) { bestDiff = diff; best = name; }
+      }
+      if (bestDiff < freq * 0.02) return best;
+      return best + '?';
+    }
+
+    // 初始化 AudioContext (需用户手势后创建)
+    function ensureAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    // 渲染音符表格
+    function renderTable() {
+      const tbody = document.getElementById('notesBody');
+      tbody.innerHTML = '';
+      notes.forEach((n, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+      <td class="idx">${i + 1}</td>
+      <td><input type="number" value="${n.freq}" min="0" max="20000" onchange="updateNote(${i},'freq',this.value)"></td>
+      <td><input type="number" value="${n.dur}" min="1" max="10000" onchange="updateNote(${i},'dur',this.value)"></td>
+      <td style="color:#fab387;font-size:12px;">${freqToNote(n.freq)}</td>
+      <td class="actions">
+        <button class="act-play" onclick="playSingle(${i})">▶</button>
+        <button class="act-up" onclick="moveNote(${i},-1)">↑</button>
+        <button class="act-down" onclick="moveNote(${i},1)">↓</button>
+        <button class="act-del" onclick="deleteNote(${i})">✕</button>
+      </td>`;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('noteCount').textContent = `${notes.length} 个音符`;
+      renderTimeline();
+      updateStats();
+    }
+
+    // 渲染时间轴
+    function renderTimeline() {
+      const tl = document.getElementById('timeline');
+      // 清除旧音符条
+      tl.querySelectorAll('.timeline-note').forEach(e => e.remove());
+      if (notes.length === 0) return;
+
+      const total = notes.reduce((s, n) => s + Number(n.dur), 0);
+      const w = tl.clientWidth;
+      let offset = 0;
+      notes.forEach((n, i) => {
+        const dur = Number(n.dur);
+        const left = (offset / total) * w;
+        const width = Math.max((dur / total) * w, 2);
+        const div = document.createElement('div');
+        div.className = 'timeline-note' + (n.freq <= 0 ? ' silent' : '');
+        div.style.left = left + 'px';
+        div.style.width = width + 'px';
+        div.title = `#${i + 1}: ${n.freq}Hz / ${dur}ms`;
+        div.onclick = () => playSingle(i);
+        tl.appendChild(div);
+        offset += dur;
+      });
+    }
+
+    function updateStats() {
+      const total = notes.reduce((s, n) => s + Number(n.dur), 0);
+      document.getElementById('totalTime').textContent = `总时长: ${total} ms`;
+    }
+
+    function addNote() { notes.push({ freq: 2000, dur: 100 }); renderTable(); }
+    function addSilence() { notes.push({ freq: 0, dur: 300 }); renderTable(); }
+    function deleteNote(i) { notes.splice(i, 1); renderTable(); }
+    function updateNote(i, field, val) { notes[i][field] = Number(val); renderTable(); }
+    function moveNote(i, dir) {
+      const j = i + dir;
+      if (j < 0 || j >= notes.length) return;
+      [notes[i], notes[j]] = [notes[j], notes[i]];
+      renderTable();
+    }
+    function clearAll() { notes = []; renderTable(); document.getElementById('gcodeOutput').value = ''; }
+
+    // 播放单个音符
+    function playSingle(i) {
+      ensureAudio();
+      const n = notes[i];
+      if (n.freq > 0) playTone(n.freq, n.dur);
+    }
+
+    // 播放音色
+    function playTone(freq, dur) {
+      const vol = Number(document.getElementById('volume').value) / 100;
+      const wave = document.getElementById('waveform').value;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      if (wave === 'custom' && customPeriodicWave) {
+        osc.setPeriodicWave(customPeriodicWave);
+      } else {
+        osc.type = wave;
+      }
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur / 1000);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur / 1000);
+    }
+
+    // 播放全部
+    function playAll() {
+      if (isPlaying) return;
+      ensureAudio();
+      isPlaying = true;
+      const playhead = document.getElementById('playhead');
+      playhead.style.display = 'block';
+      let elapsed = 0;
+      const total = notes.reduce((s, n) => s + Number(n.dur), 0);
+      const tl = document.getElementById('timeline');
+
+      notes.forEach((n, i) => {
+        const dur = Number(n.dur);
+        const t = setTimeout(() => {
+          if (n.freq > 0) playTone(n.freq, dur);
+          // 移动播放头
+          const pct = (elapsed / total) * 100;
+          playhead.style.left = pct + '%';
+          elapsed += dur;
+        }, elapsed);
+        playTimers.push(t);
+        elapsed += dur;
+      });
+      const endT = setTimeout(() => {
+        playhead.style.left = '100%';
+        setTimeout(() => { playhead.style.display = 'none'; isPlaying = false; }, 200);
+      }, total);
+      playTimers.push(endT);
+    }
+
+    function stopAll() {
+      playTimers.forEach(t => clearTimeout(t));
+      playTimers = [];
+      isPlaying = false;
+      document.getElementById('playhead').style.display = 'none';
+      if (audioCtx) audioCtx.close();
+      audioCtx = null;
+    }
+
+    // 导出为 M300 G-code
+    function exportToGcode() {
+      const lines = notes.map(n => {
+        if (n.freq <= 0) return `G4 P${n.dur}`;
+        return `M300 S${n.freq} P${n.dur}`;
+      });
+      const gcode = lines.join('\\n');
+      document.getElementById('gcodeOutput').value = gcode;
+    }
+
+    function copyGcode() {
+      const text = document.getElementById('gcodeOutput').value;
+      navigator.clipboard.writeText(text).then(() => alert('已复制到剪贴板!'));
+    }
+
+    // 从 G-code 导入
+    function importGcode() {
+      const text = document.getElementById('gcodeInput').value;
+      if (!text.trim()) { alert('请先粘贴 G-code'); return; }
+      notes = [];
+      // 按换行分割 (支持字面量 \n)
+      const cmds = text.replace(/\\n/g, '\n').split('\n');
+      cmds.forEach(cmd => {
+        cmd = cmd.trim();
+        if (!cmd) return;
+        const m300 = cmd.match(/^M300\s+S(\d+)\s+P(\d+)/i);
+        if (m300) { notes.push({ freq: Number(m300[1]), dur: Number(m300[2]) }); return; }
+        const g4 = cmd.match(/^G4\s+P(\d+)/i);
+        if (g4) { notes.push({ freq: 0, dur: Number(g4[1]) }); return; }
+        // 只含 M300 无 S (固定频率蜂鸣)
+        const m300p = cmd.match(/^M300\s+P(\d+)/i);
+        if (m300p) { notes.push({ freq: 1000, dur: Number(m300p[1]) }); }
+      });
+      renderTable();
+    }
+
+    // 预设旋律
+    const presets = {
+      'beep': [{ freq: 2000, dur: 200 }],
+      'morse': [
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 900 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 900 },
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 900 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 400 },
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 400 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 400 },
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 150 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 150 },
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 150 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 150 },
+        { freq: 2000, dur: 100 }, { freq: 2500, dur: 1000 }
+      ],
+      'do-mi-sol': [{ freq: 523, dur: 150 }, { freq: 659, dur: 150 }, { freq: 784, dur: 300 }],
+      'startup': [
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 900 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 900 },
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 900 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 900 },
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 400 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 400 },
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 400 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 400 },
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 150 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 150 },
+        { freq: 2000, dur: 100 }, { freq: 0, dur: 150 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 150 },
+        { freq: 2000, dur: 2500 }
+      ],
+      'marlin': [
+        { freq: 523, dur: 150 }, { freq: 659, dur: 150 }, { freq: 784, dur: 150 }, { freq: 1046, dur: 300 }
+      ]
+    };
+
+    function loadPreset(name) {
+      notes = JSON.parse(JSON.stringify(presets[name]));
+      renderTable();
+    }
+
+    // 默认加载开机旋律
+    loadPreset('startup');
+
+    // ========== 自定义波形编辑器 ==========
+    let customPeriodicWave = null;   // 当前生效的 PeriodicWave
+    let waveSamples = [];            // 波形采样点 (-1 ~ 1)
+    const SAMPLE_COUNT = 512;        // 采样点数
+    let isDrawingWave = false;
+    let waveCanvas, waveCtx;
+
+    // 初始化 canvas
+    function initWaveCanvas() {
+      waveCanvas = document.getElementById('waveCanvas');
+      waveCtx = waveCanvas.getContext('2d');
+      resizeWaveCanvas();
+      // 默认方波采样
+      resetWave('square');
+      bindWaveEvents();
+    }
+
+    function resizeWaveCanvas() {
+      const rect = waveCanvas.getBoundingClientRect();
+      waveCanvas.width = rect.width;
+      waveCanvas.height = rect.height;
+      drawWaveCanvas();
+    }
+
+    // 绘制网格 + 波形
+    function drawWaveCanvas() {
+      const W = waveCanvas.width, H = waveCanvas.height;
+      waveCtx.fillStyle = '#181825';
+      waveCtx.fillRect(0, 0, W, H);
+
+      // 网格
+      waveCtx.strokeStyle = '#313244';
+      waveCtx.lineWidth = 1;
+      waveCtx.beginPath();
+      for (let i = 0; i <= 8; i++) {
+        const x = (W / 8) * i;
+        waveCtx.moveTo(x, 0); waveCtx.lineTo(x, H);
+      }
+      for (let i = 0; i <= 4; i++) {
+        const y = (H / 4) * i;
+        waveCtx.moveTo(0, y); waveCtx.lineTo(W, y);
+      }
+      waveCtx.stroke();
+
+      // 中线
+      waveCtx.strokeStyle = '#585b70';
+      waveCtx.beginPath();
+      waveCtx.moveTo(0, H / 2);
+      waveCtx.lineTo(W, H / 2);
+      waveCtx.stroke();
+
+      // 波形
+      if (waveSamples.length === SAMPLE_COUNT) {
+        waveCtx.strokeStyle = '#a6e3a1';
+        waveCtx.lineWidth = 2;
+        waveCtx.beginPath();
+        for (let i = 0; i < SAMPLE_COUNT; i++) {
+          const x = (i / (SAMPLE_COUNT - 1)) * W;
+          const y = H / 2 - waveSamples[i] * (H / 2 - 4);
+          if (i === 0) waveCtx.moveTo(x, y);
+          else waveCtx.lineTo(x, y);
+        }
+        waveCtx.stroke();
+      }
+    }
+
+    // 绑定鼠标/触摸事件
+    function bindWaveEvents() {
+      const getPos = (e) => {
+        const rect = waveCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+          y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
+        };
+      };
+
+      const onDown = (e) => {
+        e.preventDefault();
+        isDrawingWave = true;
+        onMove(e);
+      };
+      const onMove = (e) => {
+        if (!isDrawingWave) return;
+        e.preventDefault();
+        const { x, y } = getPos(e);
+        // 在 x 附近一段范围内设置 y 值（让绘制更顺滑）
+        const centerIdx = Math.round(x * (SAMPLE_COUNT - 1));
+        const radius = 6;
+        for (let i = Math.max(0, centerIdx - radius); i <= Math.min(SAMPLE_COUNT - 1, centerIdx + radius); i++) {
+          const dist = Math.abs(i - centerIdx);
+          const weight = 1 - dist / (radius + 1);
+          const val = -(y * 2 - 1); // y 翻转（上正下负）
+          waveSamples[i] = val * weight + waveSamples[i] * (1 - weight);
+        }
+        drawWaveCanvas();
+      };
+      const onUp = () => {
+        if (isDrawingWave) {
+          isDrawingWave = false;
+          applyCustomWave(); // 松手自动应用
+        }
+      };
+
+      waveCanvas.addEventListener('mousedown', onDown);
+      waveCanvas.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      waveCanvas.addEventListener('touchstart', onDown, { passive: false });
+      waveCanvas.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('touchend', onUp);
+    }
+
+    // 重置为标准波形
+    function resetWave(type) {
+      waveSamples = new Array(SAMPLE_COUNT);
+      for (let i = 0; i < SAMPLE_COUNT; i++) {
+        const t = i / (SAMPLE_COUNT - 1); // 0~1
+        switch (type) {
+          case 'sine':
+            waveSamples[i] = Math.sin(t * Math.PI * 2);
+            break;
+          case 'square':
+            waveSamples[i] = t < 0.5 ? 1 : -1;
+            break;
+          case 'triangle':
+            waveSamples[i] = t < 0.25 ? t * 4 : t < 0.75 ? 2 - t * 4 : t * 4 - 4;
+            break;
+          case 'sawtooth':
+            waveSamples[i] = 2 * t - 1;
+            break;
+          case 'flat':
+          default:
+            waveSamples[i] = 0;
+        }
+      }
+      drawWaveCanvas();
+      applyCustomWave();
+    }
+
+    // 离散傅里叶变换 (DFT)，只取前 N 个谐波
+    function dft(samples, numHarmonics) {
+      const N = samples.length;
+      const real = new Array(numHarmonics + 1).fill(0);
+      const imag = new Array(numHarmonics + 1).fill(0);
+      for (let k = 0; k <= numHarmonics; k++) {
+        for (let n = 0; n < N; n++) {
+          const angle = (2 * Math.PI * k * n) / N;
+          real[k] += samples[n] * Math.cos(angle);
+          imag[k] -= samples[n] * Math.sin(angle);
+        }
+        real[k] /= N;
+        imag[k] /= N;
+      }
+      real[0] = 0; // 去除直流分量
+      return { real, imag };
+    }
+
+    // 生成谐波滑块并构建 PeriodicWave
+    function applyCustomWave() {
+      ensureAudio();
+      const numHarmonics = Math.min(64, Math.max(1, Number(document.getElementById('harmonicCount').value) || 16));
+      const { real, imag } = dft(waveSamples, numHarmonics);
+
+      // 更新谐波滑块 UI
+      renderHarmonics(real, imag);
+
+      // 创建 PeriodicWave
+      customPeriodicWave = audioCtx.createPeriodicWave(new Float32Array(real), new Float32Array(imag), { disableNormalization: false });
+
+      // 状态栏
+      const wf = document.getElementById('waveform').value;
+      document.getElementById('waveStatus').textContent = wf === 'custom' ? '已应用' : '自定义（未选中）';
+    }
+
+    // 渲染谐波滑块
+    function renderHarmonics(real, imag) {
+      const grid = document.getElementById('harmonicsGrid');
+      grid.innerHTML = '';
+      for (let k = 1; k < real.length; k++) {
+        const amp = Math.sqrt(real[k] * real[k] + imag[k] * imag[k]);
+        const phase = Math.atan2(imag[k], real[k]);
+        const item = document.createElement('div');
+        item.className = 'harmonic-item';
+        item.innerHTML = `
+      <label>${k}次谐波 <span class="hval">${(amp * 100).toFixed(0)}%</span></label>
+      <input type="range" min="0" max="100" value="${Math.round(amp * 100)}" data-k="${k}" data-type="amp">
+      <label style="margin-top:4px;">相位 <span class="hval">${(phase * 180 / Math.PI).toFixed(0)}°</span></label>
+      <input type="range" min="-180" max="180" value="${Math.round(phase * 180 / Math.PI)}" data-k="${k}" data-type="phase">
+    `;
+        grid.appendChild(item);
+      }
+      // 绑定滑块事件
+      grid.querySelectorAll('input[type=range]').forEach(inp => {
+        inp.addEventListener('input', onHarmonicChange);
+      });
+    }
+
+    // 谐波滑块变化：重新合成波形
+    function onHarmonicChange() {
+      const inputs = document.querySelectorAll('#harmonicsGrid input[type=range]');
+      const harmonicMap = {};
+      inputs.forEach(inp => {
+        const k = Number(inp.dataset.k);
+        if (!harmonicMap[k]) harmonicMap[k] = {};
+        harmonicMap[k][inp.dataset.type] = Number(inp.value);
+      });
+      // 重新合成时域采样
+      const numHarmonics = Object.keys(harmonicMap).length;
+      waveSamples = new Array(SAMPLE_COUNT).fill(0);
+      for (let k = 1; k <= numHarmonics; k++) {
+        const h = harmonicMap[k];
+        if (!h) continue;
+        const amp = (h.amp || 0) / 100;
+        const phase = (h.phase || 0) * Math.PI / 180;
+        for (let i = 0; i < SAMPLE_COUNT; i++) {
+          const t = i / (SAMPLE_COUNT - 1);
+          waveSamples[i] += amp * Math.sin(2 * Math.PI * k * t + phase);
+        }
+      }
+      // 归一化到 [-1, 1]
+      let maxAmp = 0;
+      for (let i = 0; i < SAMPLE_COUNT; i++) maxAmp = Math.max(maxAmp, Math.abs(waveSamples[i]));
+      if (maxAmp > 0) for (let i = 0; i < SAMPLE_COUNT; i++) waveSamples[i] /= maxAmp;
+
+      drawWaveCanvas();
+      // 重新构建 PeriodicWave（不用再做 DFT，直接用滑块值）
+      ensureAudio();
+      const real = new Array(numHarmonics + 1).fill(0);
+      const imag = new Array(numHarmonics + 1).fill(0);
+      for (let k = 1; k <= numHarmonics; k++) {
+        const h = harmonicMap[k];
+        if (!h) continue;
+        const amp = (h.amp || 0) / 100;
+        const phase = (h.phase || 0) * Math.PI / 180;
+        real[k] = amp * Math.cos(phase);
+        imag[k] = amp * Math.sin(phase);
+      }
+      customPeriodicWave = audioCtx.createPeriodicWave(new Float32Array(real), new Float32Array(imag), { disableNormalization: true });
+    }
+
+    // 试听自定义波形
+    function testWave() {
+      ensureAudio();
+      if (!customPeriodicWave) applyCustomWave();
+      const freq = Number(document.getElementById('testFreq').value) || 440;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.setPeriodicWave(customPeriodicWave);
+      osc.frequency.value = freq;
+      const vol = Number(document.getElementById('volume').value) / 100;
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1);
+    }
+
+    // 波形下拉框变化
+    function onWaveformChange() {
+      const wf = document.getElementById('waveform').value;
+      const sec = document.getElementById('customWaveSection');
+      if (wf === 'custom') {
+        sec.style.display = 'block';
+        if (!waveCanvas) initWaveCanvas();
+        if (!customPeriodicWave) applyCustomWave();
+        document.getElementById('waveStatus').textContent = '已应用';
+      } else {
+        sec.style.display = 'none';
+        const names = { square: '方波', sine: '正弦波', triangle: '三角波', sawtooth: '锯齿波' };
+        document.getElementById('waveStatus').textContent = names[wf] || wf;
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      renderTimeline();
+      if (waveCanvas) resizeWaveCanvas();
+    });
+  </script>
+</body>
+
+</html>
