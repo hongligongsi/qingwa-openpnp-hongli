@@ -184,8 +184,8 @@
 | 原理图        | `docs/hardware/SCH_插板_主板电路图.pdf`（嘉立创EDA V1.0，2026-07-20） |
 | Gerber / 钻孔 | `docs/hardware/Gerber_主板_2026-10-21.zip`（16 个文件，可直接打样） |
 | 引脚核对      | ✅ 已与原理图逐脚核对，全部一致（明细见 `docs/hardware/主板电路图核对.md`） |
-| 固件上报主板名 | `LumenPnP Motherboard REV05`           |
-| 固件上报机器名      | `LumenPnP`                             |
+| 固件编译期板名   | `LumenPnP Motherboard REV05`（`BOARD_INFO_NAME`，仅编译标识，M115 不输出） |
+| M115 的 MACHINE_TYPE | `3D Printer`（未设 `CUSTOM_MACHINE_NAME`，Marlin 默认值；OpenPnP 靠行尾 `UUID` 认机） |
 | MCU          | STM32F407VET6（ARM Cortex-M4 @ 168 MHz） |
 | Flash / SRAM | 512 KB / 192 KB                        |
 | 驱动接口         | 6 × TMC2209（单线 UART 回读）                |
@@ -237,7 +237,7 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
 | 输出 2（`M106 P1`） | MOS-2 → CN23 | `PB9` | 启用，24V 低边开关 |
 | 输出 3（`M106 P2`） | MOS-3 → CN22 | `PE5` | 启用，24V 低边开关 |
 | 输出 4（`M106 P3`） | MOS-4 → CN21 | `PE6` | 启用，24V 低边开关 |
-| 辅助风扇（控制器风扇） | FAN | `PE2` | 启用，任一电机使能即转，停机 120 s 后关闭 |
+| 辅助风扇（控制器风扇） | FAN → CN20 | `PE2` | 启用，任一电机使能即转，停机 120 s 后关闭 |
 | 蜂鸣器 | BUZZER | `PA7` | 启用（`SPEAKER`） |
 | 底部环形灯 | BTM-LIGHT | `PC7` | 启用，18 颗，`NEO_GRB` |
 | 顶部环形灯 | TOP-LIGHT | `PC8` | 启用，18 颗；`M150 S1 ...` 可单独控制 |
@@ -278,7 +278,7 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
 | 智能飞达总线 | MAX3078 RS485 收发器 | `PA9`(DI) / `PA10`(RO) / `PD11`(DE) / `PD12`(RE) |
 | 真空压力检测 | 2 × XGZP6857D | I²C 经 PCA9545A 四通道复用（`PB6`/`PB7`），上下吸嘴各一路 |
 | 吸嘴头识别 | CHIMERA 网络 | `PC1`（经 T9 跳线） |
-| 扩展座 | H6 / CN20 | `PA13`/`PA14`（`IO72`/`IO76`）、`PA5`/`PA6`/`PA15`/`PC0`（AUX） |
+| 调试座 H6（2×5） | SWD + 复位引出 | 3V3、`REST`、`PA13`/`PA14`（`IO72`/`IO76`），其余脚空置 |
 
 **⑦ 尚未分配的引脚**
 
@@ -312,7 +312,9 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
 - **接口**：USB CDC 虚拟串口（`SERIAL_PORT -1`），无需波特率匹配但对齐
     
   `250000` 亦可；
-- **识别**：连接后发送 `M115`，应回报机器名 `LumenPnP` 与固件版本；
+- **识别**：连接后发送 `M115`，应回报固件版本、`AXIS_COUNT:5` 与行尾 `UUID`
+  （`MACHINE_TYPE` 显示 Marlin 默认的 `3D Printer` 属正常，详见
+  [常见问题](#-常见问题)）；
 - **运动指令**：标准 `G0/G1` + `G28` 归位 + `M119` 限位查询，
     
   完整兼容 Marlin 命令集；
@@ -322,7 +324,9 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
   （板级已定义 `SRAM_EEPROM_EMULATION` 与 8 KB 空间，可直接启用）；
 - 每台飞达在上位机中是**独立串口设备**（各自刷飞达固件）。
 
-### REV05 AUX 扩展口（8 脚）
+### REV05 AUX 扩展口（8 脚，板上座号 U30）
+
+实物板上的 U30（2×4 排针）与下述固件定义**逐脚一致**，可直接对照接线：
 
 ```
              _________
@@ -598,7 +602,7 @@ pio device monitor -b 250000
 发送以下命令验证：
 
 ```gcode
-M115            ; 回报固件版本与机器名（应含 LumenPnP）
+M115            ; 回报固件版本、轴数与芯片 UUID（MACHINE_TYPE 显示 3D Printer 属正常）
 M119            ; 查询限位状态
 G28             ; 全轴归位（先确认限位接线正确再执行！）
 ```
@@ -907,7 +911,7 @@ python buildroot/scripts/check-config-code-intact.py --ref HEAD  # 代码零改�
 ### 七、典型调试顺序
 
 ```gcode
-M115                    ; 1. 确认连上的是 LumenPnP
+M115                    ; 1. 确认固件版本与 UUID（连机验证）
 M119                    ; 2. 手推各轴压限位，看状态是否翻转
 G28                     ; 3. 归位
 G92 X0 Y0 Z0 A0 B0      ; 4. 当前位置设为原点（或直接 G28 后即可）
@@ -1162,7 +1166,8 @@ python buildroot/scripts/check-config-i18n.py
 <details>
 <summary><b>如何确认刷入的固件版本/配置？</b></summary>
 
-上位机发送 `M115`，会回传固件信息（包含版本字符串与机器名 LumenPnP）。
+上位机发送 `M115`，会回传固件信息（版本字符串、`AXIS_COUNT:5` 与芯片 UUID；
+`MACHINE_TYPE` 为 Marlin 默认的 `3D Printer`，属正常现象）。
 </details>
 
 <details>
@@ -1258,16 +1263,15 @@ RESET）；② 换一根确定支持数据的 USB 线；③ Linux 下确认有 `
 <summary><b>开机蜂鸣器声音怎么设置？</b></summary>
 
 开机音在 `Marlin/Configuration_adv.h` 的 `STARTUP_COMMANDS` 中定义（主板配置
-约 3855 行），本质是开机时自动执行的一串 `M300` 蜂鸣 G 代码：
+约 3858 行），本质是开机时自动执行的一串 `M300` 蜂鸣 G 代码：
 
 ```
-#define STARTUP_COMMANDS "M300 S2000 P100\nG4 P900\nM300 S2000 P100\n..." \
-                         "...\nM300 S2500 P1000"
+#define STARTUP_COMMANDS "M300 S523 P140\nG4 P90\nM300 S659 P140\nG4 P90\nM300 S784 P140\nG4 P90\nM300 S1046 P420"
 ```
 
 - `S<频率>`：蜂鸣音调（Hz）；`P<时长>`：持续时间（ms）；`G4 P<ms>`：音符间隔。
-- 想换节奏/音调，直接改这串命令即可；想换成旋律，可用固件里注释掉的三音
-  示例：`"M300 S523 P150\nM300 S659 P150\nM300 S784 P300"`（C5-E5-G5）。
+- 当前开机音是 C5-E5-G5-C6 四音琶音（DO-MI-SOL-DO 上行）。注释掉的旧版
+  摩斯节奏（第 3856 行）还保留在配置里，想换回去取消注释并注释当前行即可。
 - 前提条件：`Configuration.h` 中需启用 `SPEAKER`（主板配置已启用），否则
   `M300` 的 `S` 变频参数不生效；蜂鸣器引脚由
   `pins_OPULO_LUMEN_REV5.h` 的 `BEEPER_PIN PA7` 定义。
