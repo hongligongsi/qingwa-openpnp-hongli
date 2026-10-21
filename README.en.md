@@ -139,8 +139,9 @@ How to choose among the four feeder configs:
   - 8-pin **AUX** port: 3×PWM + 1×analog input + I²C (SCL/SDA)
   - **RS485** TX/RX enable pins (external feeders / comm boards)
   - 4 ID pins (`PD0`–`PD3`) for hardware-revision detection
-- **Parameter storage**: SRAM EEPROM emulation (8 KB), ideal when parameters are
-  rewritten by the host.
+- **Parameter storage**: SRAM EEPROM emulation (8 KB) is prepared at board level,
+  but `EEPROM_SETTINGS` is **disabled** by default, so `M500` does not persist —
+  see "Common G-code → Parameter storage".
 - **Full G-code compatibility**: the complete Marlin G/M command set with its fast
   parser is preserved.
 - **Per-revision configuration snapshots**: REV3 / REV4 plus feeder revisions
@@ -228,7 +229,7 @@ uses the physical switches. Enabling it requires turning that macro on and tunin
 | General IO (AUX control) | `PD13` | writable and readable |
 | USB | `PA11` / `PA12` | fixed by the MCU, virtual serial port |
 | SWD debug | `PA13` / `PA14` | ST-Link flashing / debugging |
-| EEPROM | none on board | SRAM emulation, 8 KB (`MARLIN_EEPROM_SIZE 0x2000`) |
+| EEPROM | none on board | SRAM emulation, 8 KB (`MARLIN_EEPROM_SIZE 0x2000`), but `EEPROM_SETTINGS` is off |
 
 **⑥ Unassigned pins**
 
@@ -262,8 +263,9 @@ handy for custom additions such as extra sensors or pneumatic valves.
   name `LumenPnP` and firmware version;
 - **Motion commands**: standard `G0/G1` + `G28` homing + `M119` endstop query,
   fully compatible with the Marlin command set;
-- **Parameter storage**: EEPROM is SRAM-emulated — `M500` save /
-  `M501` load / `M502` reset to firmware defaults;
+- **Parameter storage**: ⚠️ `EEPROM_SETTINGS` is **not enabled** in this firmware, so
+  `M500` answers `EEPROM disabled`; runtime changes (`M92`, `M906`, ...) are lost on
+  reboot. Enable that macro in `Configuration.h` and rebuild if you need persistence;
 - Each feeder appears to the host as an **independent serial device** (each
   flashed with the feeder firmware).
 
@@ -574,10 +576,10 @@ change. Do it like this:
 2. **Rebuild**: `pio run`. Config changes trigger an incremental rebuild.
 
 3. **Make the values take effect — either**:
-   - flash the new firmware, then send `M502` (load firmware defaults) +
-     `M500` (save to EEPROM);
-   - or without reflashing, send `M203 X8000 Y8000` + `M500` over serial for a
-     runtime change.
+   - flash the new firmware — the parameters are then the compiled defaults
+     (`EEPROM_SETTINGS` is off, so nothing needs to be saved);
+   - or without reflashing, send `M203 X8000 Y8000` over serial for a runtime
+     change (lost on reboot).
 
 4. **Sync the snapshot** (when the motherboard config changed): copy the active
    config into `rev5-config/` to keep it current (command in "Configuration
@@ -612,35 +614,125 @@ python buildroot/scripts/check-config-code-intact.py --ref HEAD  # confirm zero 
 
 ## 🧰 Common G-code
 
-The firmware keeps Marlin's full G/M command set. Typical PnP/debug examples:
+The firmware keeps Marlin's full G/M command set, but **not every command is
+compiled in** — a PnP machine has no extruder, heater, probe, SD card or display,
+so those handlers are removed at build time. Three markers are used below:
+
+- ✅ available
+- ⚠️ available but limited (see note)
+- ❌ not compiled into this firmware (`Unknown command` if sent)
+
+### 1. Connection and status
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `M115` | ✅ | Firmware info and capability set — first command any host sends |
+| `M114` | ✅ | Report current position (X/Y/Z in mm, A/B in degrees) |
+| `M119` | ✅ | State of the three endstops |
+| `M122` | ✅ | Full TMC2209 status for all six drivers: current, microsteps, connection errors |
+| `M105` | ⚠️ | No temperature sensors — returns empty/zero |
+| `M503` | ✅ | Print all adjustable parameters currently in RAM |
+| `M111` | ❌ | Debug level, not compiled outside dev mode |
+| `M31` | ❌ | No SD card |
+
+### 2. Motion
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `G0` / `G1` | ✅ | Linear move — the workhorse for a PnP machine |
+| `G2` / `G3` | ✅ | Arc interpolation (`ARC_SUPPORT` is on) |
+| `G4` | ✅ | Dwell, `G4 P500` = pause 500 ms |
+| `G28` | ✅ | Home; can restrict axes, e.g. `G28 X Y` |
+| `G92` | ✅ | Set the logical position without moving |
+| `M92` | ✅ | Steps per unit at runtime (lost on reboot) |
+| `M201` / `M203` | ✅ | Max acceleration / max feedrate |
+| `M204` | ✅ | Acceleration: `P` print, `T` travel, `R` retract |
+| `M205` | ✅ | Advanced settings; this firmware uses `J` (junction deviation) |
+| `M206` / `M428` | ✅ | Home offset / derive home offset from current position |
+| `M211` | ✅ | Software endstops on/off/report |
+| `M220` | ✅ | Feedrate factor, `M220 S50` = half speed |
+| `M400` | ✅ | Wait for all queued moves to finish |
+| `M410` | ✅ | Immediate quickstop, clears the motion queue |
+| `M17` / `M18` / `M84` | ✅ | Enable / disable steppers; `M84 S30` sets a 30 s idle timeout |
+| `M120` / `M121` | ✅ | Enable / disable endstop-always-on monitoring |
+| `M221` | ❌ | Flow factor, no extruder |
+| `G29` / `G30` / `G38` | ❌ | No probe, no bed leveling |
+| `G10` / `G11` | ❌ | Retract, no extruder |
+| `G5` / `G60` / `G61` | ❌ | Bezier / saved positions not enabled |
+| `M290` / `M600` | ❌ | Babystepping / filament change not compiled |
+
+### 3. TMC2209 driver tuning
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `M906` | ✅ | Set current (mA RMS): `M906 X800 Y1000` |
+| `M122` | ✅ | Query driver status; `M122 X` for a single axis |
+| `M569` | ✅ | StealthChop on/off: `M569 S1 Z` on, `S0` off |
+| `M912` – `M915` | ❌ | Prewarn, hybrid threshold, StallGuard — those features are off |
+
+### 4. Direct pin control (the PnP-specific part)
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `M42` | ✅ | Write a pin: `M42 P<n> S<0-255>`; `I` sets input, `T` sets pullup |
+| `M43` | ✅ | Read a pin / list pins; **with no arguments it prints the full pin-number map** |
+| `M43 E1` | ✅ | Live endstop monitor — the most useful tool when debugging homing |
+| `M43 T` | ✅ | Toggle output pins in bulk |
+
+> ⚠️ The `P` value in `M42`/`M43` is Marlin's **internal pin index**, not a GPIO
+> name. When unsure, send `M43` first to list the index, then map it to names like
+> `PD0` or `PA5`.
+
+### 5. Fans / LED strip / buzzer
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `M106 P<0-3> S<0-255>` | ✅ | Four PWM fans (`PB8` / `PB9` / `PE5` / `PE6`) |
+| `M107 P<0-3>` | ✅ | Turn the matching fan off |
+| `M150` | ✅ | NeoPixel colour: `M150 R255 U0 B0` (`U` is green — the strip is GRB) |
+| `M150 P...` | ✅ | Limit the update to the first N LEDs or a range |
+| `M300 S<Hz> P<ms>` | ✅ | Beep, `M300 S523 P200` plays C5 |
+| `M300 S0` | ✅ | Mute immediately — handy during debugging |
+
+### 6. Parameter storage (a known gotcha)
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `M503` | ✅ | Report parameters currently in RAM (always works) |
+| `M502` | ✅ | Reset RAM parameters to the compiled defaults |
+| `M500` | ⚠️ | **Answers `EEPROM disabled`** because `EEPROM_SETTINGS` is off |
+| `M501` | ⚠️ | Nothing to read — behaves like reset-and-report |
+
+To make `M92`, `M906` or `M201` survive a power cycle, enable `EEPROM_SETTINGS`
+in `Configuration.h` and rebuild (the board already provides SRAM emulation and
+8 KB of space).
+
+### 7. A typical bring-up sequence
 
 ```gcode
-M906 X1000 Y1000        ; set X/Y driver current (mA)
-M204 T4000              ; trapezoid acceleration
-G0 F60000               ; fast move example (60000 mm/min)
-
-; —— Drive the ID pins (PD0-PD3) as generic I/O ——
-M42 P15 T2              ; PD0 -> input + pull-up
-M43 P43                 ; read PD0 level
-M42 P31 S255            ; AUX pin high (PD13 example)
-M42 P31 S0              ; AUX pin low
-
-; TMC driver diagnostics
-M122                    ; TMC status for all axes
+M115                    ; 1. confirm you are talking to a LumenPnP
+M119                    ; 2. push each axis onto its endstop and watch the state flip
+G28                     ; 3. home
+G92 X0 Y0 Z0 A0 B0      ; 4. declare this the origin (optional after G28)
+G0 X50 Y50 F3000        ; 5. slow test move
+M114                    ; 6. verify the reported position matches reality
+M122                    ; 7. check the drivers for connection errors
+M300 S523 P150          ; 8. test the buzzer
+M150 R0 U255 B0 P16     ; 9. test the LED strip (green)
+M84                     ; 10. release the motors
 ```
 
-**Feeder firmware (flashed separately)** — the feeder maps its three sprocket
-wheels to rotational axes `A` / `B` / `C` (in degrees); feeding/rewinding is
-just rotating them:
+**Feeder firmware (flashed separately)** — a feeder maps its three feed wheels to
+the rotary axes `A` / `B` / `C` (degrees), so feeding and retracting is just
+rotating them:
 
 ```gcode
-G1 A45 F2000            ; rotate wheel A forward 45° (advance one pocket)
-G1 A-45 F2000           ; rotate wheel A backward (rewind)
-M114                    ; report positions (rotational axes in degrees)
+G1 A45 F2000            ; advance wheel A by 45° (one tape pitch)
+G1 A-45 F2000           ; reverse (retract tape)
+M114                    ; report axis positions (rotary axes in degrees)
 ```
 
-See the [Marlin G-code docs](https://marlinfw.org/docs/gcode/M000-M001.html) for the
-full command reference.
+Full command reference: [Marlin G-code docs](https://marlinfw.org/docs/gcode/M000-M001.html).
 
 ---
 
@@ -709,6 +801,17 @@ table in "Configuration & Versioning"). Restore the mis-edited lines via
 `git diff Marlin/Configuration.h`, then run
 `python buildroot/scripts/check-config-i18n.py` to confirm the schema count is
 back to the 2444-item baseline.
+</details>
+
+<details>
+<summary><b>M500 answers "EEPROM disabled" — settings won't persist?</b></summary>
+
+`EEPROM_SETTINGS` is commented out in `Configuration.h`, so the whole EEPROM code
+path is not compiled: `M500` only answers `EEPROM disabled`, and runtime changes
+such as `M92` / `M906` / `M201` are lost on reboot. The board-level SRAM emulation
+(`SRAM_EEPROM_EMULATION`, 8 KB) is already prepared — enable the macro and rebuild
+if you need persistence. To inspect the parameters in effect right now, just send
+`M503`.
 </details>
 
 <details>

@@ -1,15 +1,24 @@
-<p align="center">  
+<p align="center">
+  
   <b>🐸 青蛙贴片机 固件 · qingwa-pnp-marlin</b>  
-  
-  基于 Marlin 2.1.x + Opulo LumenPnP REV5 主板的贴片机专用固件  
+
+  
+  基于 Marlin 2.1.x + Opulo LumenPnP REV5 主板的贴片机专用固件
+  
 </p>
 
-<p align="center">  
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="GPL-3.0"></a>  
-  <img src="https://img.shields.io/badge/Marlin-2.1.x-important.svg" alt="Marlin 2.1.x">  
-  <img src="https://img.shields.io/badge/Board-LumenPnP%20REV5-success.svg" alt="LumenPnP REV5">  
-  <img src="https://img.shields.io/badge/MCU-STM32F407VET6-informational.svg" alt="STM32F407VET6">  
-  <img src="https://img.shields.io/badge/Build-PlatformIO-orange.svg" alt="PlatformIO">  
+<p align="center">
+  
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="GPL-3.0"></a>
+  
+  <img src="https://img.shields.io/badge/Marlin-2.1.x-important.svg" alt="Marlin 2.1.x">
+  
+  <img src="https://img.shields.io/badge/Board-LumenPnP%20REV5-success.svg" alt="LumenPnP REV5">
+  
+  <img src="https://img.shields.io/badge/MCU-STM32F407VET6-informational.svg" alt="STM32F407VET6">
+  
+  <img src="https://img.shields.io/badge/Build-PlatformIO-orange.svg" alt="PlatformIO">
+  
 </p>
 
 <p align="center"><strong>简体中文</strong> | <a href="README.en.md">English</a></p>
@@ -34,27 +43,37 @@
 
 ## 📖 项目简介
 
-本项目是 **「青蛙贴片机」专用固件**。它并非 3D 打印机固件，而是把一个通用开源固件  
+本项目是 **「青蛙贴片机」专用固件**。它并非 3D 打印机固件，而是把一个通用开源固件
+  
 **Marlin** 改造为 **SMT 贴片机（Pick-and-Place）的运动控制器固件**。
 
 ### 这台机器由什么组成？
 
 一台完整的青蛙贴片机包含两大部分，**各自运行一套独立但同源的固件**：
 
-1. **主板（Motherboard）** —— 机器的"大脑 + 四肢"。     
-   基于 **Opulo LumenPnP Motherboard REV05**（MCU：STMicroelectronics     
-   **STM32F407VET6**，ARM Cortex-M4，512 KB Flash / 192 KB SRAM），     
-   负责机头的 X/Y 定位、Z 轴升降、双电机同步（X/Y2）、限位检测、     
+1. **主板（Motherboard）** —— 机器的"大脑 + 四肢"。
+     
+   基于 **Opulo LumenPnP Motherboard REV05**（MCU：STMicroelectronics
+     
+   **STM32F407VET6**，ARM Cortex-M4，512 KB Flash / 192 KB SRAM），
+     
+   负责机头的 X/Y 定位、Z 轴升降、双电机同步（X/Y2）、限位检测、
+     
    相机/光源/真空等外设控制。它就是本仓库的**默认构建目标**。
-2. **飞达（Feeder，电动送料器）** —— 负责把元件编带按格推进到取料位。     
-   每台飞达内部有一块 **Opulo 飞达主控板（REV3 或 REV4）**，同样运行 Marlin，     
-   用旋转轴驱动拨爪轮完成送带动作。飞达固件用本仓库里的     
+2. **飞达（Feeder，电动送料器）** —— 负责把元件编带按格推进到取料位。
+     
+   每台飞达内部有一块 **Opulo 飞达主控板（REV3 或 REV4）**，同样运行 Marlin，
+     
+   用旋转轴驱动拨爪轮完成送带动作。飞达固件用本仓库里的
+     
    `rev*-feeder-config` 配置快照构建（详见下文教程）。
 
-固件通过 USB 串口接收 G 代码 / 状态查询，可与 OpenPnP 等上位机软件配合完成  
+固件通过 USB 串口接收 G 代码 / 状态查询，可与 OpenPnP 等上位机软件配合完成
+  
 自动贴装流程。上位机把**主板和每 这个台飞达视为独立的串口设备**分别下发指令。
 
-> 该仓库从上游 **Marlin 2.1.x** 与 **Opulo LumenPnP** 开源硬件/软件生态定制而来，>   
+> 该仓库从上游 **Marlin 2.1.x** 与 **Opulo LumenPnP** 开源硬件/软件生态定制而来，
+>   
 > 保留了 Marlin 强大的运动规划与 HAL 分层结构，并加入了 Opulo 主板定义与多版本配置。
 
 ### 主板固件裁掉了什么？
@@ -73,8 +92,10 @@
 
 ## 🧩 系统架构：一套源码，两种固件
 
-本仓库**只维护一份 Marlin 源码**，主板固件和飞达固件都从它构建——  
-两者唯一的区别是编译时套用的**配置文件**（`Configuration.h` /  
+本仓库**只维护一份 Marlin 源码**，主板固件和飞达固件都从它构建——
+  
+两者唯一的区别是编译时套用的**配置文件**（`Configuration.h` /
+  
 `Configuration_adv.h`）和**构建环境（env）**&#x4E0D;同：
 
 ```
@@ -108,7 +129,8 @@
 
 - `rev4-v3.0-feeder-config`：v3.0 硬件，送带速度较保守（200 mm/s）；
 - `rev4-v3.1-feeder-config`：v3.1 硬件，送带速度提升到 1000 mm/s；
-- `rev4-v3.1-feeder-pwm-aux-config`：同 v3.1，额外开启 `FAST_PWM_FAN`    
+- `rev4-v3.1-feeder-pwm-aux-config`：同 v3.1，额外开启 `FAST_PWM_FAN`
+    
   （AUX 风扇 31.4 kHz 高频驱动，消除啸叫）；
 - `rev3-feeder-config`：REV3 主控旧款飞达（与 REV4 系列引脚/功能差异较大）。
 
@@ -116,10 +138,12 @@
 
 ## ✨ 功能特性
 
-- **六轴独立步进**：X / Y / Y2 / Z / I / J 各轴独立 STEP/DIR/EN 引脚与单线 TMC UART    
+- **六轴独立步进**：X / Y / Y2 / Z / I / J 各轴独立 STEP/DIR/EN 引脚与单线 TMC UART
+    
   回读（软串口 19200 baud），全轴 **TMC2209**。
 - **失速 / 堵转检测信号（DIAG）**：六轴 DIAG 引脚直接引出，可接入上位机做堵转判断。
-- **纯运动 / IO 控制器**：`EXTRUDERS 0`、全部温度传感器关闭，3D 打印热管理路径被裁掉，    
+- **纯运动 / IO 控制器**：`EXTRUDERS 0`、全部温度传感器关闭，3D 打印热管理路径被裁掉，
+    
   中断与定时器资源优先保证运动控制。
 - **完善的板载外设定义**：
   - X / Y / Z 三路限位开关
@@ -128,11 +152,14 @@
   - 8 脚 **AUX** 扩展口：3×PWM + 1×模拟输入 + I²C（SCL/SDA）
   - **RS485** 收发使能脚（用于外部送料器 / 通讯板）
   - 4 个 ID 引脚（`PD0`–`PD3`），支持硬件版本识别
-- **参数存储**：SRAM EEPROM 仿真（8 KB），配合上位机使用不掉电参数重写。
+- **参数存储**：板级预留 SRAM EEPROM 仿真（8 KB），但 `EEPROM_SETTINGS`
+  默认**未启用**，`M500` 不生效——详见「常用 G 代码 → 参数保存」。
 - **G 代码兼容**：完整保留 Marlin 的 G/M 命令体系与快速解析器。
-- **多硬件版本配置快照**：REV3 / REV4 + 各代送料器（v3.0 / v3.1 / PWM-AUX）配置保留，    
+- **多硬件版本配置快照**：REV3 / REV4 + 各代送料器（v3.0 / v3.1 / PWM-AUX）配置保留，
+    
   便于对照、回归与硬件升级。
-- **继承 Marlin 2.1 生态**：HAL 分层（本仓库重点使用 STM32 HAL）、PlatformIO 一键构建、    
+- **继承 Marlin 2.1 生态**：HAL 分层（本仓库重点使用 STM32 HAL）、PlatformIO 一键构建、
+    
   官方 CI 工作流、Auto Build 脚本。
 
 ---
@@ -211,7 +238,7 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
 | 通用 IO（AUX 控制） | `PD13` | 可写可读 |
 | USB | `PA11` / `PA12` | 芯片固定，虚拟串口 |
 | SWD 调试 | `PA13` / `PA14` | ST-Link 烧录 / 调试 |
-| EEPROM | 无外置芯片 | SRAM 模拟，8 KB（`MARLIN_EEPROM_SIZE 0x2000`） |
+| EEPROM | 无外置芯片 | SRAM 模拟，8 KB（`MARLIN_EEPROM_SIZE 0x2000`，但 `EEPROM_SETTINGS` 未启用） |
 
 **⑥ 尚未分配的引脚**
 
@@ -231,20 +258,27 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
 | 默认速度      | `7000, 7000, 1000, 50000, 50000` mm/s | X / Y / Z / I / J                    |
 | X/Y/Y2 联动 | X + Y + Y2 双电机同步                      | 龙门结构，Y2 跟随 Y                         |
 
-> I / J 为**旋转轴**（配置中 `AXIS4_ROTATES` / `AXIS5_ROTATES`），>   
-> 在 G 代码中分别用字母 **`A`** / **`B`** 引用，范围 0–720°（约两圈）；>   
-> 可用 `M114` 查询位置、`G1 A90` 试转。Y2 是 Y 的第二路驱动（TMC2209 独立>   
+> I / J 为**旋转轴**（配置中 `AXIS4_ROTATES` / `AXIS5_ROTATES`），
+>   
+> 在 G 代码中分别用字母 **`A`** / **`B`** 引用，范围 0–720°（约两圈）；
+>   
+> 可用 `M114` 查询位置、`G1 A90` 试转。Y2 是 Y 的第二路驱动（TMC2209 独立
+>   
 > STEP/DIR/EN），用于龙门双电机同步。
 
 ### 与 OpenPnP 上位机对接要点
 
-- **接口**：USB CDC 虚拟串口（`SERIAL_PORT -1`），无需波特率匹配但对齐    
+- **接口**：USB CDC 虚拟串口（`SERIAL_PORT -1`），无需波特率匹配但对齐
+    
   `250000` 亦可；
 - **识别**：连接后发送 `M115`，应回报机器名 `LumenPnP` 与固件版本；
-- **运动指令**：标准 `G0/G1` + `G28` 归位 + `M119` 限位查询，    
+- **运动指令**：标准 `G0/G1` + `G28` 归位 + `M119` 限位查询，
+    
   完整兼容 Marlin 命令集；
-- **参数保存**：EEPROM 为 SRAM 仿真，`M500` 保存 / `M501` 载入 /    
-  `M502` 恢复固件默认值；
+- **参数保存**：⚠️ 本固件**未启用 `EEPROM_SETTINGS`**，`M500` 会回
+  `EEPROM disabled`，`M92` / `M906` 等运行时改动只在本次上电生效，重启即回到
+  编译值。需要掉电保存请打开 `Configuration.h` 的 `EEPROM_SETTINGS` 后重新编译
+  （板级已定义 `SRAM_EEPROM_EMULATION` 与 8 KB 空间，可直接启用）；
 - 每台飞达在上位机中是**独立串口设备**（各自刷飞达固件）。
 
 ### REV05 AUX 扩展口（8 脚）
@@ -270,8 +304,10 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
 | **飞达固件**     | 电动送料器（Feeder）REV4 主控             | STM32F407VET6 | `Opulo_Lumen_REV4`     | `Marlin/rev4-*-feeder-config/` 三选一    |
 | **飞达固件（旧款）** | 电动送料器（Feeder）REV3 主控             | STM32F407VET6 | `Opulo_Lumen_REV3`     | `Marlin/rev3-feeder-config/`          |
 
-三块板的板级定义（引脚 / 时钟 / 上传协议）分别在  
-`buildroot/share/PlatformIO/boards/marlin_opulo_lumen_rev{3,4,5}.json`，  
+三块板的板级定义（引脚 / 时钟 / 上传协议）分别在
+  
+`buildroot/share/PlatformIO/boards/marlin_opulo_lumen_rev{3,4,5}.json`，
+  
 引脚定义在 `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV{3,4,5}.h`。
 
 ```text
@@ -325,15 +361,20 @@ qingwa-pnp-marlin/
 
 ### 两套程序的配置差异要点
 
-- **主板固件（REV5）**：驱动贴片机的 X/Y 运动轴、限位、相机/光源接口等，    
+- **主板固件（REV5）**：驱动贴片机的 X/Y 运动轴、限位、相机/光源接口等，
+    
   是本仓库的默认构建目标。
-- **飞达固件（REV3/REV4）**：`EXTRUDERS 0`（无挤出/热端），    
-  并将 `AXIS4/AXIS5/AXIS6` 声明为**旋转轴**（`AXISn_ROTATES`），    
+- **飞达固件（REV3/REV4）**：`EXTRUDERS 0`（无挤出/热端），
+    
+  并将 `AXIS4/AXIS5/AXIS6` 声明为**旋转轴**（`AXISn_ROTATES`），
+    
   用于驱动送料拨爪轮；送带速度参数因硬件代次而不同。
 - 四套飞达配置之间的实质差异很小：
-  - `rev4-v3.0` vs `rev4-v3.1`：仅送带速度参数      
+  - `rev4-v3.0` vs `rev4-v3.1`：仅送带速度参数
+      
     （`DEFAULT_MAX_FEEDRATE` 200→1000 mm/s、`HOMING_FEEDRATE` 100→200 mm/min）；
-  - `rev4-v3.1-pwm-aux` vs `rev4-v3.1`：仅多开 `FAST_PWM_FAN`      
+  - `rev4-v3.1-pwm-aux` vs `rev4-v3.1`：仅多开 `FAST_PWM_FAN`
+      
     （`FAST_PWM_FAN_FREQUENCY 31400`，AUX 风扇高频静音）；
   - `rev3` 与 `rev4` 系列差异较大（不同主控代次，引脚与功能集不同）。
 
@@ -546,8 +587,10 @@ make tests-single-local TEST_TARGET=Opulo_Lumen_REV5
 2. **重新编译**：`pio run`。配置改动会触发增量重建。
 
 3. **参数生效方式二选一**：
-   - 烧录新固件后，执行 `M502`（载入固件默认值）+ `M500`（保存到 EEPROM）；
-   - 或不重刷固件，直接在串口发 `M203 X8000 Y8000` + `M500` 临时调整。
+   - 烧录新固件后，参数已是编译默认值；本固件未启用 EEPROM，改过的参数重启即复位
+     （若已启用 `EEPROM_SETTINGS`，此时应执行 `M502` + `M500`）；
+   - 或不重刷固件，直接在串口发 `M203 X8000 Y8000` 临时调整（本固件未启用 EEPROM，
+     重启后会回到编译值）。
 
 4. **同步快照**（改的是主板配置时）：把激活配置拷入 `rev5-config/`，
    保持快照与现状一致（命令见上文「配置文件的组织方式」）。
@@ -580,21 +623,109 @@ python buildroot/scripts/check-config-code-intact.py --ref HEAD  # 代码零改�
 
 ## 🧰 常用 G 代码
 
-固件保留 Marlin 的完整 G/M 命令。贴片机调试常用示例：
+本固件保留 Marlin 的 G/M 指令集，但**并非全部都被编译进来**——贴片机没有挤出机、
+加热、探针、SD 卡和显示屏，相关指令在编译阶段就被裁掉了。下表用三种标记区分：
+
+- ✅ 可用
+- ⚠️ 可用但受限（见备注）
+- ❌ 本固件未编译（发送会得到 `Unknown command`）
+
+### 一、连接与状态查询
+
+| 指令 | 状态 | 说明 |
+|------|------|------|
+| `M115` | ✅ | 固件信息与能力集，上位机连机第一步 |
+| `M114` | ✅ | 报告当前坐标（X/Y/Z 毫米 + A/B 角度） |
+| `M119` | ✅ | 三个限位开关的当前电平 |
+| `M122` | ✅ | 六路 TMC2209 全量状态：电流、微步、连接错误计数 |
+| `M105` | ⚠️ | 无温度传感器，回传值为空/0 |
+| `M503` | ✅ | 打印内存中的全部可调参数（不读 EEPROM） |
+| `M111` | ❌ | 调试等级，非开发模式未编译 |
+| `M31` | ❌ | 无 SD 卡 |
+
+### 二、运动控制
+
+| 指令 | 状态 | 说明 |
+|------|------|------|
+| `G0` / `G1` | ✅ | 直线移动（贴片机的主力指令） |
+| `G2` / `G3` | ✅ | 圆弧插补（`ARC_SUPPORT` 已开） |
+| `G4` | ✅ | 延时，`G4 P500` = 停 500 ms |
+| `G28` | ✅ | 归位，可限定轴：`G28 X Y` |
+| `G92` | ✅ | 设定当前位置为指定坐标（不改实际位置） |
+| `M92` | ✅ | 设置每单位步数（运行时生效，重启丢失） |
+| `M201` / `M203` | ✅ | 最大加速度 / 最大速度 |
+| `M204` | ✅ | 加速度：`P` 打印、`T` 空移、`R` 回抽 |
+| `M205` | ✅ | 高级设置，本固件用 `J`（Junction Deviation）|
+| `M206` / `M428` | ✅ | 原点偏移 / 用当前位置反推原点偏移 |
+| `M211` | ✅ | 软限位开关与查询 |
+| `M220` | ✅ | 速度倍率百分比，`M220 S50` 降速一半 |
+| `M400` | ✅ | 等待队列中所有运动执行完 |
+| `M410` | ✅ | 立即急停并清空运动队列 |
+| `M17` / `M18` / `M84` | ✅ | 使能 / 释放电机，`M84 S30` 设 30 s 空闲释放 |
+| `M120` / `M121` | ✅ | 限位常开检测 / 关闭 |
+| `M221` | ❌ | 流量倍率，无挤出机 |
+| `G29` / `G30` / `G38` | ❌ | 无探针、无调平 |
+| `G10` / `G11` | ❌ | 回抽相关，无挤出机 |
+| `G5` / `G60` / `G61` | ❌ | 贝塞尔 / 位置存档未启用 |
+| `M290` / `M600` | ❌ | 微步进 / 换料暂停，均未编译 |
+
+### 三、TMC2209 驱动调节
+
+| 指令 | 状态 | 说明 |
+|------|------|------|
+| `M906` | ✅ | 设电流（mA RMS）：`M906 X800 Y1000` |
+| `M122` | ✅ | 查询驱动状态；`M122 X` 只看单轴 |
+| `M569` | ✅ | StealthChop 开关：`M569 S1 Z` 开、`S0` 关 |
+| `M912` – `M915` | ❌ | 预报警、混合阈值、StallGuard，相关功能未启用 |
+
+### 四、引脚直控（贴片机专属玩法）
+
+| 指令 | 状态 | 说明 |
+|------|------|------|
+| `M42` | ✅ | 写引脚：`M42 P<编号> S<0-255>`；`I` 设输入、`T` 设上拉 |
+| `M43` | ✅ | 读引脚 / 列引脚；**不带参数会打印全部引脚编号对照表** |
+| `M43 E1` | ✅ | 实时监视限位状态，调试归位最有用 |
+| `M43 T` | ✅ | 批量翻转输出引脚 |
+
+> ⚠️ `M42`/`M43` 里的 `P` 是 **Marlin 内部引脚编号**，不是 GPIO 名字。
+> 拿不准时先发一次 `M43` 列出编号，再去对 `PD0`、`PA5` 这些名字。
+
+### 五、风扇 / 灯带 / 蜂鸣器
+
+| 指令 | 状态 | 说明 |
+|------|------|------|
+| `M106 P<0-3> S<0-255>` | ✅ | 四路风扇调速（PB8 / PB9 / PE5 / PE6） |
+| `M107 P<0-3>` | ✅ | 关对应风扇 |
+| `M150` | ✅ | NeoPixel 颜色：`M150 R255 U0 B0`（U 为绿色，注意是 GRB 顺序） |
+| `M150 P...` | ✅ | 只设置前 N 颗或指定区间亮度 |
+| `M300 S<Hz> P<ms>` | ✅ | 蜂鸣，`M300 S523 P200` 发 C5 音 |
+| `M300 S0` | ✅ | 立即静音，调试时很好用 |
+
+### 六、参数保存（本固件的坑）
+
+| 指令 | 状态 | 说明 |
+|------|------|------|
+| `M503` | ✅ | 报告当前内存中的参数（随时可用） |
+| `M502` | ✅ | 把内存参数恢复成固件编译时的默认值 |
+| `M500` | ⚠️ | **回 `EEPROM disabled`**，因为 `EEPROM_SETTINGS` 未启用 |
+| `M501` | ⚠️ | 无 EEPROM 可读，等效于重置并报告 |
+
+想让 `M92`、`M906`、`M201` 这些改完能掉电保存，需要先在 `Configuration.h`
+打开 `EEPROM_SETTINGS` 再重新编译烧录（板级已备好 SRAM 仿真与 8 KB 空间）。
+
+### 七、典型调试顺序
 
 ```gcode
-M906 X1000 Y1000        ; 设置 X/Y 电流（mA）
-M204 T4000              ; 梯形加速度
-G0 F60000               ; 快速移动示例（速度 60000 mm/min）
-
-; —— ID 引脚（PD0-PD3）以“通用 IO”方式读写示例 ——
-M42 P15 T2              ; 设置 PD0 为输入+上拉
-M43 P43                 ; 读取 PD0 电平
-M42 P31 S255            ; AUX 引脚输出高（PD13 示例）
-M42 P31 S0              ; AUX 引脚输出低
-
-; TMC 驱动状态诊断
-M122                    ; 查看各轴 TMC 状态
+M115                    ; 1. 确认连上的是 LumenPnP
+M119                    ; 2. 手推各轴压限位，看状态是否翻转
+G28                     ; 3. 归位
+G92 X0 Y0 Z0 A0 B0      ; 4. 当前位置设为原点（或直接 G28 后即可）
+G0 X50 Y50 F3000        ; 5. 低速试走一段
+M114                    ; 6. 核对实际坐标是否吻合
+M122                    ; 7. 检查驱动有无连接错误
+M300 S523 P150          ; 8. 试蜂鸣
+M150 R0 U255 B0 P16     ; 9. 试灯带（绿）
+M84                     ; 10. 释放电机
 ```
 
 **飞达固件（另刷）的常用指令**——飞达把三个送带轮定义为旋转轴
@@ -669,6 +800,16 @@ RESET）；② 换一根确定支持数据的 USB 线；③ Linux 下确认有 `
 对照 git 恢复误改的行：`git diff Marlin/Configuration.h`，
 再跑 `python buildroot/scripts/check-config-i18n.py` 确认 schema 项数
 恢复到 2444 项基线。
+</details>
+
+<details>
+<summary><b>M500 报 EEPROM disabled，参数存不下来？</b></summary>
+
+`Configuration.h` 里的 `EEPROM_SETTINGS` 目前是注释状态（`// #define EEPROM_SETTINGS`），
+所以 EEPROM 相关代码整体不参与编译：`M500` 只会回 `EEPROM disabled`，
+`M92` / `M906` / `M201` 这类运行时改动重启即丢失。
+板级其实已经备好 SRAM 仿真空间（`SRAM_EEPROM_EMULATION`，8 KB），
+需要掉电保存就打开该宏重新编译烧录；只想看当前生效的参数，发 `M503` 即可。
 </details>
 
 <details>
