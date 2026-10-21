@@ -847,12 +847,66 @@ compile time and cannot be saved at runtime.
 
 ## 🤝 Credits & License
 
-- Firmware built on **Marlin**: <https://github.com/MarlinFirmware/Marlin>
-  (by Scott Lahteine and the Marlin community)
-- Board support & board JSON from the **Opulo LumenPnP** open hardware/software
-  ecosystem: <https://github.com/opulo-inc/>
-- All code is released under the **GPL-3.0** license — see [LICENSE](LICENSE).
-  Per the GPL, redistribution of builds based on this firmware must also be open
-  source and provide the corresponding source.
-- This firmware is maintained for the **Qingwa (Frog) PnP** project. Feedback is
-  welcome via Issues in this repository.
+### Whose shoulders this firmware stands on
+
+| Upstream project | Role in this project |
+|------------------|----------------------|
+| [Marlin](https://github.com/MarlinFirmware/Marlin) (by Scott Lahteine and the Marlin community) | The firmware core: motion planning, G-code parsing, STM32 HAL, TMC driver framework |
+| [Opulo LumenPnP](https://github.com/opulo-inc/) | REV5 motherboard hardware, the board pin file `pins_OPULO_LUMEN_REV5.h`, build board definition |
+| [TMCStepper](https://github.com/teemuatlut/TMCStepper) | UART register configuration for the TMC2209 (pulled in as a Marlin dependency) |
+| [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) | Driver for the 18-LED strip |
+| STM32duino / STM32 hardware abstraction layer | Clock, USB CDC and timer layer for the STM32F407 |
+| [PlatformIO](https://platformio.org/) | Build system and ARM toolchain orchestration |
+| [OpenPnP](https://openpnp.org/) | The host application; the `.openpnp2/` folder here is its runtime configuration |
+
+None of this would exist without that open-source work. Each upstream component
+keeps its own license; this project does not alter those terms.
+
+### What this project adds
+
+The following changes are also released under GPL-3.0, copyright the contributors
+of this repository:
+
+- **Configuration layer**: full Simplified-Chinese comments in `Configuration.h` /
+  `Configuration_adv.h`, plus structural repairs to the motherboard and four feeder
+  configs (machine-readable comments, schema compatibility)
+- **Documentation**: bilingual READMEs (architecture, pinout, build, debugging, FAQ)
+  and the configuration-checking guide
+- **Verification tooling**: `buildroot/scripts/check-config-i18n.py`,
+  `check-config-code-intact.py` and the schema baseline
+- **M300 melody editor**: `m300_editor/` (single-page front end, no external deps)
+- **Startup tune and default-parameter adjustments**
+
+### What GPL-3.0 means in practice
+
+Everything here is released under the **GNU GPL v3.0** — see [LICENSE](LICENSE).
+It is a **copyleft** license, so whenever you distribute the firmware (free or
+paid) you must:
+
+| Obligation | What it requires |
+|------------|------------------|
+| Provide source | Ship the **complete corresponding source**, including build scripts and configs — with any machine you sell that carries this firmware. A binary alone is not enough |
+| Keep notices | Do not strip existing copyright, license or warranty notices |
+| Mark changes | Modified files must carry a notice that they were changed and when (GPLv3 §5a) |
+| Same license | Derivative works must stay under GPL-3.0 — you cannot relicense them |
+| No extra restrictions | You may not add terms that restrict the rights GPL grants (e.g. a paid-only license, a ban on reverse engineering) |
+| No warranty | The software is provided as-is; authors are not liable for defects or damages |
+| Patent grant | Contributors automatically grant users a license to their necessary patents (GPLv3 §11) |
+
+In one sentence: **use it, modify it, sell machines built with it — but the moment
+you distribute the firmware, the source has to travel with it.**
+
+### Not an official release
+
+This is a **community fork**, not an official Marlin release and not the official
+Opulo firmware. "Marlin" is the MarlinFirmware project name and "LumenPnP" is an
+Opulo product name; they are referenced here for identification only and imply no
+endorsement or affiliation.
+
+### Feedback
+
+This firmware is maintained for the **Qingwa (Frog) PnP** project and shared for
+learning and exchange. Bug reports, suggestions and mods are welcome via:
+
+- **Bilibili: @青蛙贴片机** (fastest way to reach us)
+- **Issues** on this repository

@@ -873,11 +873,59 @@ RESET）；② 换一根确定支持数据的 USB 线；③ Linux 下确认有 `
 
 ## 🤝 致谢与许可证
 
-- 固件本体基于 **Marlin** 开发：<https://github.com/MarlinFirmware/Marlin>
-  （作者：Scott Lahteine 及 Marlin 社区）
-- 主板支持与板级 JSON 来自 **Opulo LumenPnP** 开源硬件/软件生态：
-  <https://github.com/opulo-inc/>
-- 全部代码以 **GPL-3.0** 许可发布，见 [LICENSE](LICENSE)。按 GPL 要求，
-  基于本固件的再分发需同样开放源码并提供兼容源码。
-- 本固件供 **青蛙贴片机** 项目使用与学习交流；如有问题欢迎在
-  **Bilibili @青蛙贴片机** 评论区交流，或提交 Issue。
+### 这套固件站在谁的肩膀上
+
+| 上游项目 | 在本项目中的角色 |
+|----------|------------------|
+| [Marlin](https://github.com/MarlinFirmware/Marlin)（作者 Scott Lahteine 及 Marlin 社区） | 固件本体：运动规划、G 代码解析、STM32 HAL、TMC 驱动框架 |
+| [Opulo LumenPnP](https://github.com/opulo-inc/) | REV5 主板硬件设计、板级引脚文件 `pins_OPULO_LUMEN_REV5.h`、构建板定义 |
+| [TMCStepper](https://github.com/teemuatlut/TMCStepper) | TMC2209 的 UART 寄存器配置（经 Marlin 依赖引入） |
+| [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) | 18 颗灯带的驱动 |
+| STM32duino / STM32 硬件抽象层 | STM32F407 的时钟、USB CDC、定时器底层 |
+| [PlatformIO](https://platformio.org/) | 构建系统与 ARM 工具链调度 |
+| [OpenPnP](https://openpnp.org/) | 上位机；仓库内 `.openpnp2/` 为其运行时配置产物 |
+
+没有这些开源工作，就没有这套固件。上游各组件按其自身许可发布，
+本项目不改变其许可条款。
+
+### 本项目自己做了什么
+
+以下改动同样以 GPL-3.0 发布，版权归本项目贡献者：
+
+- **配置层汉化与原位修复**：`Configuration.h` / `Configuration_adv.h` 全量中文注释，
+  以及主板 + 四套飞达配置的结构修复（魔法注释、schema 兼容）
+- **文档体系**：中英双份 README（架构、引脚、构建、调试、FAQ）、配置校验说明
+- **校验工具**：`buildroot/scripts/check-config-i18n.py`、
+  `check-config-code-intact.py` 及 schema 基线
+- **M300 蜂鸣器旋律编辑器**：`m300_editor/`（纯前端单页，无外部依赖）
+- **开机音与默认参数调整**
+
+### GPL-3.0 意味着什么
+
+本仓库全部代码以 **GNU GPL v3.0** 发布，全文见 [LICENSE](LICENSE)。
+它是**传染性（copyleft）**许可，分发时（无论免费还是收费）需履行：
+
+| 义务 | 具体要求 |
+|------|----------|
+| 提供源码 | 分发固件（含烧录进机器出售）时，必须向接收者提供**完整的对应源码**，包含构建脚本与配置文件——只给二进制不够 |
+| 保留声明 | 不得删除原有的版权声明、许可声明与免责声明 |
+| 标注修改 | 修改过的文件需说明"已修改"及修改时间（GPLv3 §5a） |
+| 同一许可 | 衍生作品整体仍须以 GPL-3.0 分发，不能改成更宽松或更严格的条款 |
+| 不得附加限制 | 不能对接收者行使 GPL 授予的权利再加限制（如额外收费授权、禁止逆向） |
+| 无担保 | 软件按"现状"提供，作者不承担质量与损害责任 |
+| 专利授权 | 贡献者自动向使用者授予其必要专利许可（GPLv3 §11） |
+
+一句话：**自己用、改、卖整机都可以，但一旦对外分发固件，源码必须跟着走。**
+
+### 非官方声明
+
+本项目是**社区改造版本**，并非 Marlin 官方发布，也不是 Opulo 官方固件。
+"Marlin" 为 MarlinFirmware 的项目名称，"LumenPnP" 为 Opulo 的产品名称，
+此处仅作事实性引用，不代表任何官方背书或关联。
+
+### 交流与反馈
+
+本固件供 **青蛙贴片机** 项目使用与学习交流。问题、建议或改造分享欢迎：
+
+- **Bilibili：@青蛙贴片机**（评论区留言最快）
+- 本仓库 **Issue**
