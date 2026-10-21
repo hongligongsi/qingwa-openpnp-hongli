@@ -162,20 +162,79 @@ How to choose among the four feeder configs:
 | Flash / SRAM | 512 KB / 192 KB |
 | Driver interface | 6 × TMC2209 (single-wire UART) |
 
-### Key pin quick reference (from `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`)
+### Complete pin map (from `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`)
 
-| Function | Pins |
-|----------|------|
-| X / Y / Z stops | `PC6` / `PD15` / `PD14` |
-| X / Y / Y2 / Z / I / J DIAG | `PB10` / `PB11` / `PC12` / `PB5` / `PC10` / `PC11` |
-| X / Y / Y2 / Z / I / J step | `PB15` / `PE15` / `PD6` / `PE7` / `PC4` / `PE11` |
-| NeoPixel ×2 | `PC7` / `PC8` |
-| Buzzer | `PA7` |
-| Fan / driver 0–3 | `PB8` / `PB9` / `PE5` / `PE6` |
-| I²C (SDA / SCL) | `PB7` / `PB6` |
-| SPI (MISO/MOSI/SCK) | `PB4` / `PB5` / `PB3` |
-| RS485 TX/RX enable | `PD11` / `PD12` |
-| ID pins | `PD0`–`PD3` |
+Every pin is defined in that single header. "Status" means whether this firmware
+config actually uses it.
+
+**① Stepper motors (6 × TMC2209, single-wire UART)**
+
+| Axis | STEP | DIR | ENABLE | UART (TX=RX) | DIAG | Status |
+|------|------|-----|--------|--------------|------|--------|
+| X | `PB15` | `PB14` | `PD9` | `PD8` | `PB10` | active |
+| Y | `PE15` | `PE14` | `PB13` | `PB12` | `PB11` | active |
+| Y2 | `PD6` | `PD7` | `PA3` | `PA2` | `PC12` | active (dual Y) |
+| Z | `PE7` | `PB1` | `PE9` | `PE8` | `PB5` | active |
+| A (I axis) | `PC4` | `PA4` | `PB0` | `PC5` | `PC10` | active (rotary) |
+| B (J axis) | `PE11` | `PE10` | `PE13` | `PE12` | `PC11` | active (rotary) |
+
+UART is **single-wire half duplex**: TX and RX are the same pin, talking over the
+TMC2209 PDN_UART line at a fixed `19200` baud (lower rate for reliability). Note
+Y2 is really enabled (`Y2_DRIVER_TYPE TMC2209` in `Configuration.h`), so the
+machine has 6 motors, not 5.
+
+**② Endstops and homing**
+
+| Axis | Pin | Notes |
+|------|-----|-------|
+| X min | `PC6` | physical switch |
+| Y min | `PD15` | physical switch |
+| Z min | `PD14` | physical switch |
+
+`SENSORLESS_HOMING` is currently off, so although the DIAG pins are wired, homing
+uses the physical switches. Enabling it requires turning that macro on and tuning
+`X/Y_STALL_SENSITIVITY`.
+
+**③ Fans / buzzer / LEDs**
+
+| Function | Pin | Status |
+|----------|-----|--------|
+| FAN0 (`M106 P0`) | `PB8` | active (`FAN_COUNT` = 4) |
+| FAN1 (`M106 P1`) | `PB9` | active |
+| FAN2 (`M106 P2`) | `PE5` | active |
+| FAN3 (`M106 P3`) | `PE6` | active |
+| Controller fan (auto) | `PE2` | active, spins whenever a motor is enabled |
+| Buzzer | `PA7` | active (`SPEAKER`) |
+| NeoPixel strip | `PC7` | active, 18 LEDs, `NEO_GRB` |
+| Second NeoPixel | `PC8` | defined but unused (`NEOPIXEL2_SEPARATE` off) |
+
+**④ Buses**
+
+| Bus | Pins | Purpose |
+|-----|------|---------|
+| SPI | MISO `PB4` / MOSI `PB5` / SCK `PB3` | spare TMC SPI mode (UART is used instead) |
+| I²C | SDA `PB7` / SCL `PB6` | I²C peripherals, also on the AUX port |
+| RS485 | TX enable `PD11` / RX enable `PD12` | feeder / peripheral comms |
+
+> ⚠️ `PB5` is shared between `Z_DIAG_PIN` and `MOSI_PIN`. Harmless here because the
+> TMCs use UART rather than SPI; if you attach an SPI device, Z sensorless homing
+> would need a different pin.
+
+**⑤ Board ID and system pins**
+
+| Function | Pins | Notes |
+|----------|------|-------|
+| Board revision ID | `PD0` / `PD1` / `PD2` / `PD3` | set input pullup before reading (`M42`/`M43` examples at the end of the header) |
+| General IO (AUX control) | `PD13` | writable and readable |
+| USB | `PA11` / `PA12` | fixed by the MCU, virtual serial port |
+| SWD debug | `PA13` / `PA14` | ST-Link flashing / debugging |
+| EEPROM | none on board | SRAM emulation, 8 KB (`MARLIN_EEPROM_SIZE 0x2000`) |
+
+**⑥ Unassigned pins**
+
+`PA0`, `PA1`, `PA8`–`PA10`, `PB2` (BOOT1), `PC1`–`PC3`, `PC9`, `PC13`–`PC15`,
+`PD4`, `PD5`, `PD10`, `PE0`, `PE1`, `PE3`, `PE4` are free in the pin header —
+handy for custom additions such as extra sensors or pneumatic valves.
 
 ### Kinematics & travel parameters (from `Marlin/Configuration.h`)
 

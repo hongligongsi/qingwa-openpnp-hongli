@@ -1,14 +1,15 @@
-<p align="center">
-  <b>🐸 青蛙贴片机 固件 · qingwa-pnp-marlin</b><br/>
-  基于 Marlin 2.1.x + Opulo LumenPnP REV5 主板的贴片机专用固件
+<p align="center">  
+  <b>🐸 青蛙贴片机 固件 · qingwa-pnp-marlin</b>  
+  
+  基于 Marlin 2.1.x + Opulo LumenPnP REV5 主板的贴片机专用固件  
 </p>
 
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="GPL-3.0"></a>
-  <img src="https://img.shields.io/badge/Marlin-2.1.x-important.svg" alt="Marlin 2.1.x">
-  <img src="https://img.shields.io/badge/Board-LumenPnP%20REV5-success.svg" alt="LumenPnP REV5">
-  <img src="https://img.shields.io/badge/MCU-STM32F407VET6-informational.svg" alt="STM32F407VET6">
-  <img src="https://img.shields.io/badge/Build-PlatformIO-orange.svg" alt="PlatformIO">
+<p align="center">  
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="GPL-3.0"></a>  
+  <img src="https://img.shields.io/badge/Marlin-2.1.x-important.svg" alt="Marlin 2.1.x">  
+  <img src="https://img.shields.io/badge/Board-LumenPnP%20REV5-success.svg" alt="LumenPnP REV5">  
+  <img src="https://img.shields.io/badge/MCU-STM32F407VET6-informational.svg" alt="STM32F407VET6">  
+  <img src="https://img.shields.io/badge/Build-PlatformIO-orange.svg" alt="PlatformIO">  
 </p>
 
 <p align="center"><strong>简体中文</strong> | <a href="README.en.md">English</a></p>
@@ -33,49 +34,48 @@
 
 ## 📖 项目简介
 
-本项目是 **「青蛙贴片机」专用固件**。它并非 3D 打印机固件，而是把一个通用开源固件
+本项目是 **「青蛙贴片机」专用固件**。它并非 3D 打印机固件，而是把一个通用开源固件  
 **Marlin** 改造为 **SMT 贴片机（Pick-and-Place）的运动控制器固件**。
 
 ### 这台机器由什么组成？
 
 一台完整的青蛙贴片机包含两大部分，**各自运行一套独立但同源的固件**：
 
-1. **主板（Motherboard）** —— 机器的"大脑 + 四肢"。
-   基于 **Opulo LumenPnP Motherboard REV05**（MCU：STMicroelectronics
-   **STM32F407VET6**，ARM Cortex-M4，512 KB Flash / 192 KB SRAM），
-   负责机头的 X/Y 定位、Z 轴升降、双电机同步（X/Y2）、限位检测、
+1. **主板（Motherboard）** —— 机器的"大脑 + 四肢"。     
+   基于 **Opulo LumenPnP Motherboard REV05**（MCU：STMicroelectronics     
+   **STM32F407VET6**，ARM Cortex-M4，512 KB Flash / 192 KB SRAM），     
+   负责机头的 X/Y 定位、Z 轴升降、双电机同步（X/Y2）、限位检测、     
    相机/光源/真空等外设控制。它就是本仓库的**默认构建目标**。
-
-2. **飞达（Feeder，电动送料器）** —— 负责把元件编带按格推进到取料位。
-   每台飞达内部有一块 **Opulo 飞达主控板（REV3 或 REV4）**，同样运行 Marlin，
-   用旋转轴驱动拨爪轮完成送带动作。飞达固件用本仓库里的
+2. **飞达（Feeder，电动送料器）** —— 负责把元件编带按格推进到取料位。     
+   每台飞达内部有一块 **Opulo 飞达主控板（REV3 或 REV4）**，同样运行 Marlin，     
+   用旋转轴驱动拨爪轮完成送带动作。飞达固件用本仓库里的     
    `rev*-feeder-config` 配置快照构建（详见下文教程）。
 
-固件通过 USB 串口接收 G 代码 / 状态查询，可与 OpenPnP 等上位机软件配合完成
-自动贴装流程。上位机把**主板和每台飞达视为独立的串口设备**分别下发指令。
+固件通过 USB 串口接收 G 代码 / 状态查询，可与 OpenPnP 等上位机软件配合完成  
+自动贴装流程。上位机把**主板和每 这个台飞达视为独立的串口设备**分别下发指令。
 
-> 该仓库从上游 **Marlin 2.1.x** 与 **Opulo LumenPnP** 开源硬件/软件生态定制而来，
+> 该仓库从上游 **Marlin 2.1.x** 与 **Opulo LumenPnP** 开源硬件/软件生态定制而来，>   
 > 保留了 Marlin 强大的运动规划与 HAL 分层结构，并加入了 Opulo 主板定义与多版本配置。
 
 ### 主板固件裁掉了什么？
 
 为达到"纯运动控制"目标，本固件在配置层面移除了 3D 打印相关逻辑：
 
-| 项目 | 本固件 |
-|------|--------|
-| `EXTRUDERS` | `0`（无挤出机） |
-| 温度传感器 | 全部关闭（无加热/热床/风扇温控） |
-| 轴定义 | X / Y / Y2 / Z / I / J 六路步进 |
-| 驱动类型 | 全部 TMC2209（单线 UART） |
-| 串口 | USB CDC（`SERIAL_PORT -1`）@ 250000 |
+| 项目          | 本固件                               |
+| ----------- | --------------------------------- |
+| `EXTRUDERS` | `0`（无挤出机）                         |
+| 温度传感器       | 全部关闭（无加热/热床/风扇温控）                 |
+| 轴定义         | X / Y / Y2 / Z / I / J 六路步进       |
+| 驱动类型        | 全部 TMC2209（单线 UART）               |
+| 串口          | USB CDC（`SERIAL_PORT -1`）@ 250000 |
 
 ---
 
 ## 🧩 系统架构：一套源码，两种固件
 
-本仓库**只维护一份 Marlin 源码**，主板固件和飞达固件都从它构建——
-两者唯一的区别是编译时套用的**配置文件**（`Configuration.h` /
-`Configuration_adv.h`）和**构建环境（env）**不同：
+本仓库**只维护一份 Marlin 源码**，主板固件和飞达固件都从它构建——  
+两者唯一的区别是编译时套用的**配置文件**（`Configuration.h` /  
+`Configuration_adv.h`）和**构建环境（env）**&#x4E0D;同：
 
 ```
                         ┌──────────────────────────────┐
@@ -98,17 +98,17 @@
 
 **两种固件怎么选？**
 
-| 你要刷的目标 | 用哪个 env | 用哪套配置 |
-|---|---|---|
-| 贴片机主板（REV05） | `Opulo_Lumen_REV5`（默认，直接 `pio run`） | `Marlin/` 根目录（无需任何操作） |
-| 飞达（REV4 主控） | `Opulo_Lumen_REV4` | `rev4-v3.0 / v3.1 / v3.1-pwm-aux` 三选一 |
-| 飞达（REV3 主控，旧款） | `Opulo_Lumen_REV3` | `rev3-feeder-config` |
+| 你要刷的目标         | 用哪个 env                             | 用哪套配置                                 |
+| -------------- | ----------------------------------- | ------------------------------------- |
+| 贴片机主板（REV05）   | `Opulo_Lumen_REV5`（默认，直接 `pio run`） | `Marlin/` 根目录（无需任何操作）                 |
+| 飞达（REV4 主控）    | `Opulo_Lumen_REV4`                  | `rev4-v3.0 / v3.1 / v3.1-pwm-aux` 三选一 |
+| 飞达（REV3 主控，旧款） | `Opulo_Lumen_REV3`                  | `rev3-feeder-config`                  |
 
 飞达配置四选一的依据（看飞达硬件版本和需求）：
 
 - `rev4-v3.0-feeder-config`：v3.0 硬件，送带速度较保守（200 mm/s）；
 - `rev4-v3.1-feeder-config`：v3.1 硬件，送带速度提升到 1000 mm/s；
-- `rev4-v3.1-feeder-pwm-aux-config`：同 v3.1，额外开启 `FAST_PWM_FAN`
+- `rev4-v3.1-feeder-pwm-aux-config`：同 v3.1，额外开启 `FAST_PWM_FAN`    
   （AUX 风扇 31.4 kHz 高频驱动，消除啸叫）；
 - `rev3-feeder-config`：REV3 主控旧款飞达（与 REV4 系列引脚/功能差异较大）。
 
@@ -116,10 +116,10 @@
 
 ## ✨ 功能特性
 
-- **六轴独立步进**：X / Y / Y2 / Z / I / J 各轴独立 STEP/DIR/EN 引脚与单线 TMC UART
+- **六轴独立步进**：X / Y / Y2 / Z / I / J 各轴独立 STEP/DIR/EN 引脚与单线 TMC UART    
   回读（软串口 19200 baud），全轴 **TMC2209**。
 - **失速 / 堵转检测信号（DIAG）**：六轴 DIAG 引脚直接引出，可接入上位机做堵转判断。
-- **纯运动 / IO 控制器**：`EXTRUDERS 0`、全部温度传感器关闭，3D 打印热管理路径被裁掉，
+- **纯运动 / IO 控制器**：`EXTRUDERS 0`、全部温度传感器关闭，3D 打印热管理路径被裁掉，    
   中断与定时器资源优先保证运动控制。
 - **完善的板载外设定义**：
   - X / Y / Z 三路限位开关
@@ -130,9 +130,9 @@
   - 4 个 ID 引脚（`PD0`–`PD3`），支持硬件版本识别
 - **参数存储**：SRAM EEPROM 仿真（8 KB），配合上位机使用不掉电参数重写。
 - **G 代码兼容**：完整保留 Marlin 的 G/M 命令体系与快速解析器。
-- **多硬件版本配置快照**：REV3 / REV4 + 各代送料器（v3.0 / v3.1 / PWM-AUX）配置保留，
+- **多硬件版本配置快照**：REV3 / REV4 + 各代送料器（v3.0 / v3.1 / PWM-AUX）配置保留，    
   便于对照、回归与硬件升级。
-- **继承 Marlin 2.1 生态**：HAL 分层（本仓库重点使用 STM32 HAL）、PlatformIO 一键构建、
+- **继承 Marlin 2.1 生态**：HAL 分层（本仓库重点使用 STM32 HAL）、PlatformIO 一键构建、    
   官方 CI 工作流、Auto Build 脚本。
 
 ---
@@ -141,54 +141,109 @@
 
 ### 主板信息
 
-| 项 | 值 |
-|----|----|
-| 固件上报主板名 | `LumenPnP Motherboard REV05` |
-| 固件上报机器名 | `LumenPnP` |
-| MCU | STM32F407VET6（ARM Cortex-M4 @ 168 MHz） |
-| Flash / SRAM | 512 KB / 192 KB |
-| 驱动接口 | 6 × TMC2209（单线 UART 回读） |
+| 项            | 值                                      |
+| ------------ | -------------------------------------- |
+| 固件上报主板名      | `LumenPnP Motherboard REV05`           |
+| 固件上报机器名      | `LumenPnP`                             |
+| MCU          | STM32F407VET6（ARM Cortex-M4 @ 168 MHz） |
+| Flash / SRAM | 512 KB / 192 KB                        |
+| 驱动接口         | 6 × TMC2209（单线 UART 回读）                |
 
-### 关键引脚速查（来自 `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`）
+### 完整引脚表（来自 `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`）
 
-| 功能 | 引脚 |
-|------|------|
-| X / Y / Z 限位 | `PC6` / `PD15` / `PD14` |
-| X / Y / Y2 / Z / I / J DIAG | `PB10` / `PB11` / `PC12` / `PB5` / `PC10` / `PC11` |
-| X / Y / Y2 / Z / I / J 步进 | `PB15` / `PE15` / `PD6` / `PE7` / `PC4` / `PE11` |
-| NeoPixel ×2 | `PC7` / `PC8` |
-| 蜂鸣器 | `PA7` |
-| 风扇 / 驱动 0–3 | `PB8` / `PB9` / `PE5` / `PE6` |
-| I²C（SDA / SCL） | `PB7` / `PB6` |
-| SPI（MISO/MOSI/SCK） | `PB4` / `PB5` / `PB3` |
-| RS485 收发使能 | `PD11` / `PD12` |
-| ID 引脚 | `PD0`–`PD3` |
+所有引脚都在这一份头文件里定义，"当前状态"指本固件配置下是否实际启用。
+
+**① 步进电机（6 路 TMC2209，单线 UART）**
+
+| 轴 | STEP | DIR | ENABLE | UART（TX=RX） | DIAG | 状态 |
+|----|------|-----|--------|---------------|------|------|
+| X | `PB15` | `PB14` | `PD9` | `PD8` | `PB10` | 启用 |
+| Y | `PE15` | `PE14` | `PB13` | `PB12` | `PB11` | 启用 |
+| Y2 | `PD6` | `PD7` | `PA3` | `PA2` | `PC12` | 启用（双 Y 同步） |
+| Z | `PE7` | `PB1` | `PE9` | `PE8` | `PB5` | 启用 |
+| A（I 轴） | `PC4` | `PA4` | `PB0` | `PC5` | `PC10` | 启用（旋转） |
+| B（J 轴） | `PE11` | `PE10` | `PE13` | `PE12` | `PC11` | 启用（旋转） |
+
+UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 PDN_UART 通讯，
+波特率固定 `19200`（降低速率换可靠性）。注意 Y2 是**实际启用**的
+（`Configuration.h` 中 `Y2_DRIVER_TYPE TMC2209`），所以整机是 6 个电机而非 5 个。
+
+**② 限位开关与归位方式**
+
+| 轴 | 引脚 | 说明 |
+|----|------|------|
+| X 最小端 | `PC6` | 实体限位开关 |
+| Y 最小端 | `PD15` | 实体限位开关 |
+| Z 最小端 | `PD14` | 实体限位开关 |
+
+`SENSORLESS_HOMING`（无传感器归位）当前为关闭状态，因此 DIAG 引脚虽已接线，
+归位仍走实体开关。想启用需打开该宏并调整 `X/Y_STALL_SENSITIVITY`。
+
+**③ 风扇 / 蜂鸣器 / 灯带**
+
+| 功能 | 引脚 | 状态 |
+|------|------|------|
+| FAN0（`M106 P0`） | `PB8` | 启用（`FAN_COUNT` = 4） |
+| FAN1（`M106 P1`） | `PB9` | 启用 |
+| FAN2（`M106 P2`） | `PE5` | 启用 |
+| FAN3（`M106 P3`） | `PE6` | 启用 |
+| 控制器风扇（自动） | `PE2` | 启用，任一电机使能即转 |
+| 蜂鸣器 | `PA7` | 启用（`SPEAKER`） |
+| NeoPixel 灯带 | `PC7` | 启用，18 颗，`NEO_GRB` |
+| 第二路 NeoPixel | `PC8` | 定义了但未启用（`NEOPIXEL2_SEPARATE` 未开） |
+
+**④ 总线接口**
+
+| 总线 | 引脚 | 用途 |
+|------|------|------|
+| SPI | MISO `PB4` / MOSI `PB5` / SCK `PB3` | 备用 TMC SPI 模式（本板走 UART，未使用） |
+| I²C | SDA `PB7` / SCL `PB6` | 接 I²C 外设，同时引到 AUX 口 |
+| RS485 | 发送使能 `PD11` / 接收使能 `PD12` | 飞达等外设通信 |
+
+> ⚠️ `PB5` 被复用为 `Z_DIAG_PIN` 与 `MOSI_PIN`。本板 TMC 走 UART 不用 SPI，
+> 因此不冲突；若要外接 SPI 设备，Z 轴的无传感器归位需另择引脚。
+
+**⑤ 板级识别与系统引脚**
+
+| 功能 | 引脚 | 说明 |
+|------|------|------|
+| 板版本 ID | `PD0` / `PD1` / `PD2` / `PD3` | 需先设输入上拉再读（文件末尾有 `M42`/`M43` 示例） |
+| 通用 IO（AUX 控制） | `PD13` | 可写可读 |
+| USB | `PA11` / `PA12` | 芯片固定，虚拟串口 |
+| SWD 调试 | `PA13` / `PA14` | ST-Link 烧录 / 调试 |
+| EEPROM | 无外置芯片 | SRAM 模拟，8 KB（`MARLIN_EEPROM_SIZE 0x2000`） |
+
+**⑥ 尚未分配的引脚**
+
+`PA0`、`PA1`、`PA8`–`PA10`、`PB2`（BOOT1）、`PC1`–`PC3`、`PC9`、
+`PC13`–`PC15`、`PD4`、`PD5`、`PD10`、`PE0`、`PE1`、`PE3`、`PE4`
+在引脚文件中均未被占用，二次开发（增加传感器、气缸电磁阀等）可从这些里挑选。
 
 ### 运动学与行程参数（来自 `Marlin/Configuration.h`）
 
-| 参数 | 值 | 说明 |
-|------|-----|------|
-| 步进精度 | `320, 320, 40, 4.44, 4.44` 步/mm | X / Y / Z / I / J |
-| X 行程 | 0 – 433 mm | 归位到最小端（`X_HOME_DIR -1`） |
-| Y 行程 | 0 – 487 mm | 归位到最小端 |
-| Z 行程 | 0 – 63 mm | 归位到最小端，归位后抬到 21 mm（`Z_AFTER_HOMING`） |
-| I / J 行程 | 0 – 720（旋转量，单位度） | 不参与归位（`I/J_HOME_DIR 0`） |
-| 默认速度 | `7000, 7000, 1000, 50000, 50000` mm/s | X / Y / Z / I / J |
-| X/Y/Y2 联动 | X + Y + Y2 双电机同步 | 龙门结构，Y2 跟随 Y |
+| 参数        | 值                                     | 说明                                   |
+| --------- | ------------------------------------- | ------------------------------------ |
+| 步进精度      | `320, 320, 40, 4.44, 4.44` 步/mm       | X / Y / Z / I / J                    |
+| X 行程      | 0 – 433 mm                            | 归位到最小端（`X_HOME_DIR -1`）              |
+| Y 行程      | 0 – 487 mm                            | 归位到最小端                               |
+| Z 行程      | 0 – 63 mm                             | 归位到最小端，归位后抬到 21 mm（`Z_AFTER_HOMING`） |
+| I / J 行程  | 0 – 720（旋转量，单位度）                      | 不参与归位（`I/J_HOME_DIR 0`）              |
+| 默认速度      | `7000, 7000, 1000, 50000, 50000` mm/s | X / Y / Z / I / J                    |
+| X/Y/Y2 联动 | X + Y + Y2 双电机同步                      | 龙门结构，Y2 跟随 Y                         |
 
-> I / J 为**旋转轴**（配置中 `AXIS4_ROTATES` / `AXIS5_ROTATES`），
-> 在 G 代码中分别用字母 **`A`** / **`B`** 引用，范围 0–720°（约两圈）；
-> 可用 `M114` 查询位置、`G1 A90` 试转。Y2 是 Y 的第二路驱动（TMC2209 独立
+> I / J 为**旋转轴**（配置中 `AXIS4_ROTATES` / `AXIS5_ROTATES`），>   
+> 在 G 代码中分别用字母 **`A`** / **`B`** 引用，范围 0–720°（约两圈）；>   
+> 可用 `M114` 查询位置、`G1 A90` 试转。Y2 是 Y 的第二路驱动（TMC2209 独立>   
 > STEP/DIR/EN），用于龙门双电机同步。
 
 ### 与 OpenPnP 上位机对接要点
 
-- **接口**：USB CDC 虚拟串口（`SERIAL_PORT -1`），无需波特率匹配但对齐
+- **接口**：USB CDC 虚拟串口（`SERIAL_PORT -1`），无需波特率匹配但对齐    
   `250000` 亦可；
 - **识别**：连接后发送 `M115`，应回报机器名 `LumenPnP` 与固件版本；
-- **运动指令**：标准 `G0/G1` + `G28` 归位 + `M119` 限位查询，
+- **运动指令**：标准 `G0/G1` + `G28` 归位 + `M119` 限位查询，    
   完整兼容 Marlin 命令集；
-- **参数保存**：EEPROM 为 SRAM 仿真，`M500` 保存 / `M501` 载入 /
+- **参数保存**：EEPROM 为 SRAM 仿真，`M500` 保存 / `M501` 载入 /    
   `M502` 恢复固件默认值；
 - 每台飞达在上位机中是**独立串口设备**（各自刷飞达固件）。
 
@@ -209,14 +264,14 @@
 
 本仓库包含**两套固件程序**，共用同一份 Marlin 源码，靠「配置文件 + 构建环境（env）」区分：
 
-| 程序 | 目标硬件 | 主控芯片 | 构建 env | 配置来源 |
-|---|---|---|---|---|
-| **主板固件** | LumenPnP Motherboard REV5（贴片机主板） | STM32F407VET6 | `Opulo_Lumen_REV5`（默认） | `Marlin/` 根目录激活配置（快照见 `rev5-config/`） |
-| **飞达固件** | 电动送料器（Feeder）REV4 主控 | STM32F407VET6 | `Opulo_Lumen_REV4` | `Marlin/rev4-*-feeder-config/` 三选一 |
-| **飞达固件（旧款）** | 电动送料器（Feeder）REV3 主控 | STM32F407VET6 | `Opulo_Lumen_REV3` | `Marlin/rev3-feeder-config/` |
+| 程序           | 目标硬件                             | 主控芯片          | 构建 env                 | 配置来源                                  |
+| ------------ | -------------------------------- | ------------- | ---------------------- | ------------------------------------- |
+| **主板固件**     | LumenPnP Motherboard REV5（贴片机主板） | STM32F407VET6 | `Opulo_Lumen_REV5`（默认） | `Marlin/` 根目录激活配置（快照见 `rev5-config/`） |
+| **飞达固件**     | 电动送料器（Feeder）REV4 主控             | STM32F407VET6 | `Opulo_Lumen_REV4`     | `Marlin/rev4-*-feeder-config/` 三选一    |
+| **飞达固件（旧款）** | 电动送料器（Feeder）REV3 主控             | STM32F407VET6 | `Opulo_Lumen_REV3`     | `Marlin/rev3-feeder-config/`          |
 
-三块板的板级定义（引脚 / 时钟 / 上传协议）分别在
-`buildroot/share/PlatformIO/boards/marlin_opulo_lumen_rev{3,4,5}.json`，
+三块板的板级定义（引脚 / 时钟 / 上传协议）分别在  
+`buildroot/share/PlatformIO/boards/marlin_opulo_lumen_rev{3,4,5}.json`，  
 引脚定义在 `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV{3,4,5}.h`。
 
 ```text
@@ -270,17 +325,19 @@ qingwa-pnp-marlin/
 
 ### 两套程序的配置差异要点
 
-- **主板固件（REV5）**：驱动贴片机的 X/Y 运动轴、限位、相机/光源接口等，
+- **主板固件（REV5）**：驱动贴片机的 X/Y 运动轴、限位、相机/光源接口等，    
   是本仓库的默认构建目标。
-- **飞达固件（REV3/REV4）**：`EXTRUDERS 0`（无挤出/热端），
-  并将 `AXIS4/AXIS5/AXIS6` 声明为**旋转轴**（`AXISn_ROTATES`），
+- **飞达固件（REV3/REV4）**：`EXTRUDERS 0`（无挤出/热端），    
+  并将 `AXIS4/AXIS5/AXIS6` 声明为**旋转轴**（`AXISn_ROTATES`），    
   用于驱动送料拨爪轮；送带速度参数因硬件代次而不同。
 - 四套飞达配置之间的实质差异很小：
-  - `rev4-v3.0` vs `rev4-v3.1`：仅送带速度参数
+  - `rev4-v3.0` vs `rev4-v3.1`：仅送带速度参数      
     （`DEFAULT_MAX_FEEDRATE` 200→1000 mm/s、`HOMING_FEEDRATE` 100→200 mm/min）；
-  - `rev4-v3.1-pwm-aux` vs `rev4-v3.1`：仅多开 `FAST_PWM_FAN`
+  - `rev4-v3.1-pwm-aux` vs `rev4-v3.1`：仅多开 `FAST_PWM_FAN`      
     （`FAST_PWM_FAN_FREQUENCY 31400`，AUX 风扇高频静音）；
   - `rev3` 与 `rev4` 系列差异较大（不同主控代次，引脚与功能集不同）。
+
+
 
 ---
 
