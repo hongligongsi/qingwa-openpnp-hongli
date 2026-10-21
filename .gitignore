@@ -163,3 +163,8 @@ __pycache__
 tags
 *.logs
 *.bak
+
+# OpenPnP runtime data (configs are committed, not logs/backups/snapshots)
+.openpnp2/log/
+.openpnp2/backups/
+.openpnp2/snapshots/
