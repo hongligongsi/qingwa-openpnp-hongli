@@ -837,7 +837,91 @@ M906 A200 B200    ; 设置 L/R（旋转 A/B）电机电流
 `M150 P255 R255 U255 B255`，把 `P255` 改小（如 `M150 P120 R255 U255 B255`），
 以后每次点灯都是这个亮度，不必手发命令。
 
-### 四、哪些改动重启就没了
+### 四、直接改固件（编译期）
+
+**改固件不是调速度的首选办法**——因为 OpenPnP 连上后会把好几个值覆盖掉：
+
+| OpenPnP 什么时候发什么 | 覆盖了固件哪个值 |
+|------------------------|------------------|
+| 每次移动前都发 `M204 S<加速度>`（`MOVE_TO_COMMAND`） | `DEFAULT_ACCELERATION` / `DEFAULT_TRAVEL_ACCELERATION` |
+| 每次连机发 `M906 X.. Y..` 与 `M906 A.. B..` | `X_CURRENT` 一直到 `J_CURRENT` |
+| 点灯时发 `M150 P..` | `NEOPIXEL_BRIGHTNESS` 只在不发 M150 时有效 |
+
+所以改固件真正解决问题的，是下面这四类：
+
+1. **改安全上限** —— 上限决定"最多能跑多快/多猛"，OpenPnP 设得再高也会被截断
+2. **固件独有项** —— 微步 `_MICROSTEPS`、归位速度、行程、软限位，OpenPnP 管不到
+3. **脱机运行** —— 不接上位机、用串口或脚本直接跑时，编译值就是唯一依据
+4. **让参数可保存** —— 打开 `EEPROM_SETTINGS` 后，`M906` / `M203` 才能掉电保留
+
+#### 速度（`Marlin/Configuration.h`）
+
+| 宏 | 行 | 当前值 | 作用 |
+|----|----|--------|------|
+| `DEFAULT_MAX_FEEDRATE` | 1363 | `{7000,7000,1000,50000,50000}` | X/Y/Z/I/J 速度**上限**（mm/s、°/s） |
+| `DEFAULT_MAX_ACCELERATION` | 1377 | `{15000,15000,10000,10000,10000}` | 加速度**硬上限** |
+| `DEFAULT_ACCELERATION` | 1396 | `2000` | 缺省加速度（会被 OpenPnP 的 `M204 S` 覆盖） |
+| `DEFAULT_TRAVEL_ACCELERATION` | 1399 | `2500` | 空移加速度（同上会被覆盖） |
+| `JUNCTION_DEVIATION_MM` | 1449 | `0.013` | 拐角偏差，越小越贴路径、越慢 |
+| `DEFAULT_AXIS_STEPS_PER_UNIT` | 1355 | `{320,320,40,4.44,4.44}` | 步/mm，只有改微步或换皮带轮才动它 |
+| `HOMING_FEEDRATE_MM_M` | 2462 | `{150,150,150,50,50}×60` | 归位速度（mm/min） |
+
+想让 OpenPnP 里能把加速度设到 3000，`DEFAULT_MAX_ACCELERATION` 就必须 ≥ 3000
+（现在 15000，够用）。**哪天在 OpenPnP 里设了 20000 却感觉没变快，就是被这里的
+15000 截断了。**
+
+#### 电流（`Marlin/Configuration_adv.h`）
+
+| 宏 | 行 | 当前 | 轴 |
+|----|----|------|-----|
+| `X_CURRENT` | 2850 | 800 mA | X |
+| `Y_CURRENT` | 2870 | 1000 mA | Y |
+| `Z_CURRENT` | 2890 | 800 mA | Z |
+| `I_CURRENT` | 2930 | 200 mA | 旋转 A |
+| `J_CURRENT` | 2940 | 200 mA | 旋转 B |
+
+直接改数字即可，单位 mA RMS。**Y2 没有独立宏**，它是 `Y2_CURRENT Y_CURRENT`，
+改 Y 就同时改了双 Y 龙门。
+
+#### 灯亮度（`Marlin/Configuration.h`）
+
+| 宏 | 行 | 当前 | 作用 |
+|----|----|------|------|
+| `NEOPIXEL_BRIGHTNESS` | 3758 | `255` | 第一路（`PC7`）上电初始亮度 |
+| `NEOPIXEL2_BRIGHTNESS` | 3765 | `255` | 第二路（`PC8`）上电初始亮度 |
+| `NEOPIXEL_STARTUP_TEST` | 3759 | 启用 | 上电闪一遍红绿蓝，嫌烦可注释掉 |
+
+注意这两行亮度只决定**没人发 `M150` 时**的亮度。OpenPnP 一点灯就发
+`M150 P255 ...`，照样满亮——想在 OpenPnP 里常态暗一些，还是改执行器的 `P` 值。
+
+#### 改完必做四步
+
+```bash
+# 1. 同步存档（两份配置必须逐字节一致）
+cp Marlin/Configuration.h Marlin/Configuration_adv.h Marlin/rev5-config/
+
+# 2. 校验注释结构与 schema（基线 2444 项）
+python buildroot/scripts/check-config-i18n.py
+
+# 3. 确认没改坏代码（可选，只在怀疑动了代码行时跑）
+python buildroot/scripts/check-config-code-intact.py --ref HEAD
+
+# 4. 编译并烧录（默认 DFU）
+pio run -e Opulo_Lumen_REV5 -t upload
+```
+
+只编译不烧录用 `pio run -e Opulo_Lumen_REV5`，产物在
+`.pio/build/Opulo_Lumen_REV5/firmware.bin`。
+
+#### 改配置的三条铁律
+
+1. **只改数字，别动结构**：`// @section`、`:[...]` 选项列表、`(mm)` 这类括号单位
+   都是 `schema.py` 的解析依据，动了轻则配置项丢失、重则构建直接报错
+2. **改微步要同步改步数**：`X_MICROSTEPS` 从 64 改成 32，`DEFAULT_AXIS_STEPS_PER_UNIT`
+   的 X 也得从 320 改成 160，否则走 1 mm 会变成 2 mm
+3. **电流别贪多**：TMC2209 长期超过 1200 mA 会明显发烫并丢步，一次加 100 mA 试探
+
+### 五、哪些改动重启就没了
 
 | 改动方式 | 要重编译？ | 掉电保留？ |
 |----------|-----------|-----------|

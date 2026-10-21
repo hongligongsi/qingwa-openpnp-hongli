@@ -837,7 +837,100 @@ change brightness while keeping the colour.
 command is `M150 P255 R255 U255 B255`; lower the `P255` (e.g.
 `M150 P120 R255 U255 B255`) so every actuation uses that level automatically.
 
-### 4. What survives a reboot
+### 4. Editing the firmware (compile time)
+
+**Editing the firmware is not the first tool for changing speed** — OpenPnP
+overwrites several values as soon as it connects:
+
+| What OpenPnP sends, and when | Which firmware value it overrides |
+|------------------------------|-----------------------------------|
+| `M204 S<accel>` before every move (`MOVE_TO_COMMAND`) | `DEFAULT_ACCELERATION` / `DEFAULT_TRAVEL_ACCELERATION` |
+| `M906 X.. Y..` and `M906 A.. B..` on every connect | `X_CURRENT` through `J_CURRENT` |
+| `M150 P..` whenever the light is switched on | `NEOPIXEL_BRIGHTNESS`, only used while no `M150` arrives |
+
+So firmware edits genuinely matter in four cases:
+
+1. **Raising a safety ceiling** — the ceiling decides how fast or how hard the
+   machine *can* go; anything higher from OpenPnP gets clipped
+2. **Firmware-only settings** — microsteps (`_MICROSTEPS`), homing speed, travel
+   limits, soft endstops: OpenPnP has no say in these
+3. **Standalone operation** — with no host attached, running from serial or a
+   script, the compiled values are the only ones there are
+4. **Making parameters persist** — only after enabling `EEPROM_SETTINGS` do
+   `M906` / `M203` survive a power cycle
+
+#### Speed (`Marlin/Configuration.h`)
+
+| Macro | Line | Current value | Purpose |
+|-------|------|---------------|---------|
+| `DEFAULT_MAX_FEEDRATE` | 1363 | `{7000,7000,1000,50000,50000}` | Speed **ceiling** for X/Y/Z/I/J (mm/s, °/s) |
+| `DEFAULT_MAX_ACCELERATION` | 1377 | `{15000,15000,10000,10000,10000}` | Hard acceleration **ceiling** |
+| `DEFAULT_ACCELERATION` | 1396 | `2000` | Default acceleration (overridden by OpenPnP's `M204 S`) |
+| `DEFAULT_TRAVEL_ACCELERATION` | 1399 | `2500` | Travel acceleration (also overridden) |
+| `JUNCTION_DEVIATION_MM` | 1449 | `0.013` | Corner deviation — smaller follows the path tighter but slower |
+| `DEFAULT_AXIS_STEPS_PER_UNIT` | 1355 | `{320,320,40,4.44,4.44}` | Steps per mm; touch it only for microsteps or pulley changes |
+| `HOMING_FEEDRATE_MM_M` | 2462 | `{150,150,150,50,50}×60` | Homing speed (mm/min) |
+
+To set acceleration 3000 in OpenPnP, `DEFAULT_MAX_ACCELERATION` must be ≥ 3000
+(it is 15000 today, so there is headroom). **If you set 20000 in OpenPnP and feel
+no difference, this 15000 ceiling is what clipped it.**
+
+#### Current (`Marlin/Configuration_adv.h`)
+
+| Macro | Line | Current | Axis |
+|-------|------|---------|------|
+| `X_CURRENT` | 2850 | 800 mA | X |
+| `Y_CURRENT` | 2870 | 1000 mA | Y |
+| `Z_CURRENT` | 2890 | 800 mA | Z |
+| `I_CURRENT` | 2930 | 200 mA | rotary A |
+| `J_CURRENT` | 2940 | 200 mA | rotary B |
+
+Just change the numbers; the unit is mA RMS. **There is no separate Y2 macro** —
+it reads `Y2_CURRENT Y_CURRENT`, so editing Y covers both gantry motors.
+
+#### Light brightness (`Marlin/Configuration.h`)
+
+| Macro | Line | Current | Purpose |
+|-------|------|---------|---------|
+| `NEOPIXEL_BRIGHTNESS` | 3758 | `255` | Power-on brightness of strip 1 (`PC7`) |
+| `NEOPIXEL2_BRIGHTNESS` | 3765 | `255` | Power-on brightness of strip 2 (`PC8`) |
+| `NEOPIXEL_STARTUP_TEST` | 3759 | on | Cycles red/green/blue at boot; comment out if it annoys you |
+
+These only set the brightness **while no `M150` arrives**. OpenPnP sends
+`M150 P255 ...` the moment it lights the ring, so it goes back to full — for a
+permanently dimmer ring, lower the `P` in the actuator command instead.
+
+#### Four steps after every edit
+
+```bash
+# 1. Sync the archive copy (the two must stay byte-identical)
+cp Marlin/Configuration.h Marlin/Configuration_adv.h Marlin/rev5-config/
+
+# 2. Validate comment structure and schema (2444-item baseline)
+python buildroot/scripts/check-config-i18n.py
+
+# 3. Confirm no code was broken (optional; run if you touched code lines)
+python buildroot/scripts/check-config-code-intact.py --ref HEAD
+
+# 4. Build and flash (DFU by default)
+pio run -e Opulo_Lumen_REV5 -t upload
+```
+
+To build without flashing: `pio run -e Opulo_Lumen_REV5`. The artefact lands in
+`.pio/build/Opulo_Lumen_REV5/firmware.bin`.
+
+#### Three rules for editing configs
+
+1. **Change numbers, not structure**: `// @section`, `:[...]` option lists and
+   parenthesised units like `(mm)` are what `schema.py` parses — breaking them
+   silently drops options, or fails the build outright
+2. **Microsteps and steps/mm move together**: dropping `X_MICROSTEPS` from 64 to
+   32 also requires `DEFAULT_AXIS_STEPS_PER_UNIT` X to go from 320 to 160, or
+   1 mm becomes 2 mm
+3. **Do not over-current**: a TMC2209 held above 1200 mA runs hot and loses
+   steps; raise it 100 mA at a time
+
+### 5. What survives a reboot
 
 | How you changed it | Rebuild? | Persists? |
 |--------------------|----------|-----------|
