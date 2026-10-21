@@ -37,7 +37,7 @@
 - [🧱 硬件与引脚](#-硬件与引脚)
 - [🏗 目录结构](#-目录结构)
 - [🚀 快速上手](#-快速上手)
-- [⚙️ 构建与烧录](#️-构建与烧录)
+- [⚙️ 构建与烧录](#-构建与烧录)
 - [🔧 配置修改与版本管理](#-配置修改与版本管理)
 - [🧰 常用 G 代码](#-常用-g-代码)
 - [🎛 常用调整速查：速度 / 电流 / 灯亮度](#-常用调整速查速度--电流--灯亮度)
@@ -320,6 +320,14 @@ qingwa-pnp-marlin/
 ├── .devcontainer/              # VS Code 开发容器（构建环境一键起）
 ├── .github/                    # GitHub CI / 社区配置（test-builds 等工作流）
 ├── .trellis/                   # AI 辅助开发工作流脚手架（可选）
+├── .workbuddy/                 # AI 协作工作日志与项目记忆（不参与构建）
+├── .openpnp2/                  # OpenPnP 上位机配置（随仓库走，23 个文件）
+│   ├── machine.xml             #   机器配置：轴 / 相机 / 吸嘴 / 驱动 / 光照
+│   ├── parts.xml  packages.xml #   元件库与封装定义
+│   ├── boards.xml  panels.xml  #   板卡与拼板定义
+│   ├── vision-settings.xml     #   视觉识别参数
+│   └── scripts/                #   OpenPnP 脚本示例（JavaScript / Python）
+│                               #   log / backups / snapshots 已被 .gitignore 排除
 ├── Marlin/                     # ⭐ 固件源码与配置（核心，两套程序共用）
 │   ├── Configuration.h         #   当前激活配置 = 主板 REV5
 │   ├── Configuration_adv.h     #   进阶配置
@@ -348,7 +356,12 @@ qingwa-pnp-marlin/
 ├── buildroot/                  # PlatformIO 板级支持 / 脚本 / 测试
 │   ├── share/PlatformIO/
 │   │   ├── boards/             #   板级 JSON：marlin_opulo_lumen_rev3/4/5.json
-│   │   └── scripts/            #   configuration.py 等构建脚本 + config-i18n 校验工具
+│   │   └── scripts/            #   configuration.py 等构建脚本
+│   ├── scripts/                #   ⭐ 配置校验工具（改完 Configuration*.h 必跑）
+│   │   ├── check-config-i18n.py          # 注释结构 + schema（2444 项基线）比对
+│   │   ├── check-config-code-intact.py   # ARM 预处理输出比对，证明功能等价
+│   │   ├── config-schema-baseline.json   # schema 基线快照
+│   │   └── README-config-i18n.md         # 两个脚本的用法说明
 │   ├── share/vscode/auto_build.py                #   Auto Build（PIO Build）
 │   └── tests/                  #   make tests-all-local 等自动化测试
 ├── config/  docker/  docs/     # 文档 / Docker / dev 文档（Bresenham、Serial…）

@@ -27,7 +27,7 @@
 - [🧱 Hardware & Pinout](#-hardware--pinout)
 - [🏗 Repository Layout](#-repository-layout)
 - [🚀 Quick Start](#-quick-start)
-- [⚙️ Building & Flashing](#️-building--flashing)
+- [⚙️ Building & Flashing](#-building--flashing)
 - [🔧 Configuration & Versioning](#-configuration--versioning)
 - [🧰 Common G-code](#-common-g-code)
 - [🎛 Tuning quick reference: speed / current / light](#-tuning-quick-reference-speed--current--light)
@@ -307,6 +307,14 @@ qingwa-pnp-marlin/
 ├── .devcontainer/              # VS Code dev container (build env in one click)
 ├── .github/                    # GitHub CI / community config (test-builds etc.)
 ├── .trellis/                   # AI-assisted development workflow scaffold (optional)
+├── .workbuddy/                 # AI collaboration logs and project memory (not a build input)
+├── .openpnp2/                  # OpenPnP host configuration (tracked, 23 files)
+│   ├── machine.xml             #   Machine setup: axes / cameras / nozzles / drivers / lighting
+│   ├── parts.xml  packages.xml #   Part library and package definitions
+│   ├── boards.xml  panels.xml  #   Board and panel definitions
+│   ├── vision-settings.xml     #   Vision pipeline parameters
+│   └── scripts/                #   OpenPnP script examples (JavaScript / Python)
+│                               #   log / backups / snapshots are excluded by .gitignore
 ├── Marlin/                     # ⭐ Firmware source & configuration (shared by both)
 │   ├── Configuration.h         #   Active configuration = Motherboard REV5
 │   ├── Configuration_adv.h     #   Advanced configuration
@@ -335,7 +343,12 @@ qingwa-pnp-marlin/
 ├── buildroot/                  # PlatformIO board support / scripts / tests
 │   ├── share/PlatformIO/
 │   │   ├── boards/             #   Board JSONs: marlin_opulo_lumen_rev3/4/5.json
-│   │   └── scripts/            #   configuration.py build scripts + config-i18n checkers
+│   │   └── scripts/            #   configuration.py build scripts
+│   ├── scripts/                #   ⭐ Config checkers (run after editing Configuration*.h)
+│   │   ├── check-config-i18n.py          # comment structure + schema (2444-item baseline)
+│   │   ├── check-config-code-intact.py   # ARM preprocessor diff, proves behaviour equality
+│   │   ├── config-schema-baseline.json   # schema baseline snapshot
+│   │   └── README-config-i18n.md         # usage notes for both scripts
 │   ├── share/vscode/auto_build.py                #   Auto Build (PIO Build)
 │   └── tests/                  #   make tests-all-local etc.
 ├── config/  docker/  docs/     # Docs / Docker / dev docs (Bresenham, Serial…)
@@ -347,6 +360,7 @@ qingwa-pnp-marlin/
 ├── marlin.code-workspace       # VS Code multi-root workspace
 ├── process-palette.json        # VS Code "Process Palette" → PIO Build
 ├── LICENSE                     # code GPL-3.0; see "Credits & License" for HW/docs
+├── m300_editor/                # 🎵 Web-based M300 buzzer melody editor (with tutorial)
 └── README.md / README.en.md    # Multilingual docs (Chinese by default)
 ```
 
