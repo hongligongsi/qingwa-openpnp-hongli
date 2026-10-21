@@ -9,7 +9,11 @@
 
 <p align="center">
   
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="GPL-3.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Code-GPL--3.0-blue.svg" alt="Code: GPL-3.0"></a>
+  
+  <a href="#-致谢与许可证"><img src="https://img.shields.io/badge/HW-CERN--OHL--W%202.0-green.svg" alt="Hardware: CERN-OHL-W 2.0"></a>
+  
+  <a href="#-致谢与许可证"><img src="https://img.shields.io/badge/Docs-CC%20BY--SA%204.0-blueviolet.svg" alt="Docs: CC BY-SA 4.0"></a>
   
   <img src="https://img.shields.io/badge/Marlin-2.1.x-important.svg" alt="Marlin 2.1.x">
   
@@ -354,7 +358,7 @@ qingwa-pnp-marlin/
 ├── Makefile                    # make 快捷入口
 ├── marlin.code-workspace       # VS Code 多根工作区
 ├── process-palette.json        # VS Code「Process Palette」→ PIO Build 命令定义
-├── LICENSE                     # GPL-3.0
+├── LICENSE                     # 代码 GPL-3.0；硬件/文档许可见「致谢与许可证」
 ├── m300_editor/                # 🎵 网页版 M300 蜂鸣器旋律编辑器（含教程与截图）
 └── README.md / README.en.md    # 多语言说明（中文默认）
 ```
@@ -873,49 +877,152 @@ RESET）；② 换一根确定支持数据的 USB 线；③ Linux 下确认有 `
 
 ## 🤝 致谢与许可证
 
-### 这套固件站在谁的肩膀上
+本项目不是一个独立作品——它的每一层都建在别人的开源工作上，而这些上游项目
+用的是**三种不同的许可证**。先弄清"哪部分内容归哪个许可"，再看每一条对你实际
+意味着什么。
 
-| 上游项目 | 在本项目中的角色 |
-|----------|------------------|
-| [Marlin](https://github.com/MarlinFirmware/Marlin)（作者 Scott Lahteine 及 Marlin 社区） | 固件本体：运动规划、G 代码解析、STM32 HAL、TMC 驱动框架 |
-| [Opulo LumenPnP](https://github.com/opulo-inc/) | REV5 主板硬件设计、板级引脚文件 `pins_OPULO_LUMEN_REV5.h`、构建板定义 |
-| [TMCStepper](https://github.com/teemuatlut/TMCStepper) | TMC2209 的 UART 寄存器配置（经 Marlin 依赖引入） |
-| [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) | 18 颗灯带的驱动 |
-| STM32duino / STM32 硬件抽象层 | STM32F407 的时钟、USB CDC、定时器底层 |
-| [PlatformIO](https://platformio.org/) | 构建系统与 ARM 工具链调度 |
-| [OpenPnP](https://openpnp.org/) | 上位机；仓库内 `.openpnp2/` 为其运行时配置产物 |
+### 谁的肩膀，什么许可
 
-没有这些开源工作，就没有这套固件。上游各组件按其自身许可发布，
-本项目不改变其许可条款。
+| 上游项目 | 在本项目中的角色 | 许可证 | 本仓库含其内容 |
+|----------|------------------|--------|----------------|
+| [Marlin](https://github.com/MarlinFirmware/Marlin)（Scott Lahteine 及社区） | 固件本体：运动规划、G 代码解析、STM32 HAL、TMC 驱动框架 | **GPL-3.0** | ✅ 整个 `Marlin/` |
+| [Opulo LumenPnP](https://github.com/opulo-inc/) 硬件设计 | REV5 主板原理图 / PCB / BOM、板级引脚定义 | **CERN-OHL-W 2.0** | ⚠️ 仅引脚与板级常量 |
+| Opulo LumenPnP 软件 | 飞达固件、上位机配套脚本、配置模板 | **MPL 2.0** | ⚠️ `.openpnp2/` 配置 |
+| Opulo LumenPnP 文档 | 装配、接线、校准说明 | **CC BY-SA 4.0** | ⚠️ 本 README 参考并改编 |
+| [OpenPnP](https://openpnp.org/) | 上位机 | GPL-3.0 | ❌ 单独安装 |
+| [TMCStepper](https://github.com/teemuatlut/TMCStepper)、[Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel)、STM32duino | TMC2209 寄存器、灯带驱动、STM32 底层 | 各自许可（见 `.pio/libdeps` 内 LICENSE） | 经依赖引入 |
+| [PlatformIO](https://platformio.org/) | 构建系统与 ARM 工具链 | Apache-2.0 | ❌ 工具链 |
+
+> **适用范围以各上游仓库的 LICENSE 文件为准**；上表是按 Opulo 公开的授权说明整理，
+> 上游若调整过版本，以其最新声明为优先。
+
+三种 copyleft 的"传染范围"差别很大，一句话记住：
+
+> **GPL 管整个程序 → MPL 只管单个文件 → CERN-OHL-W 管你改过的设计文件 → CC BY-SA 管改编后的文档。**
+
+### 硬件设计：CERN-OHL-W 2.0
+
+LumenPnP 的硬件（REV5 主板、飞达、结构件）以
+[CERN Open Hardware Licence v2 – Weakly Reciprocal](https://ohwr.org/cern_ohl_w_v2.txt)
+发布。名字里的 **W（Weakly，弱互惠）** 是关键——它只对**你改过的那部分**生效。
+
+| 义务 | 具体要求 |
+|------|----------|
+| 保留署名 | 保留原作者（Opulo）的名字与版权声明，不得删除 |
+| 标注修改 | 改动过的设计文件需说明"已修改"及修改日期 |
+| 开源修改 | 你改过的设计文件（原理图、PCB、BOM、结构图）分发时必须仍以 CERN-OHL-W 2.0 提供 |
+| 提供获取途径 | 分发实物产品时须附"源码位置"（Source Location）——能拿到设计文件的地址 |
+| 不附加限制 | 不能对下游再设限制（如禁止对方继续改进、要求付费才给文件） |
+| 无担保 | 原作者不对你的使用或改造承担责任 |
+
+**"弱互惠"到底意味着什么**——这是最容易误解的地方：
+
+- ✅ **可以直接拿来生产和销售**：用这套开源硬件做产品、卖整机完全允许，制造工艺、
+  供应链、成本结构等商业信息**都不需要公开**
+- ✅ **可以把自己的部分闭源**：你在开源设计上新增的**独立模块**（自研扩展板、
+  自研治具）可以闭源，只要它与开源部分的**接口明确**（连接器、排针定义、通信协议）
+- ⚠️ **改过的文件必须开源**：如果你直接修改了开源设计文件（改走线、换 BOM 里的料），
+  **那个改完的文件**必须开源——"只改了一点点"不是豁免理由
+- ❌ **不能把开源设计"藏"进闭源产品**：不能把 CERN-OHL-W 的设计文件当自己闭源
+  设计的一部分分发，也不能声称整个产品都是自研
+
+> 本仓库**不包含** LumenPnP 的硬件设计文件，只在
+> `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h` 中引用引脚定义与板级常量。
+> 要修改硬件，请从 [opulo-inc/lumenpnp](https://github.com/opulo-inc/lumenpnp)
+> 取原始设计文件，并遵守上述条款。
+
+### 上游软件：MPL 2.0
+
+Opulo 的软件部分以 [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/)
+发布。MPL 是**文件级（per-file）** copyleft——它的边界是"文件"，不是"程序"。
+
+| 义务 | 具体要求 |
+|------|----------|
+| 保留署名 | 保留原作者名字、版权与许可声明 |
+| 开源修改 | 你修改过的 MPL 文件，分发时必须继续以 MPL 2.0 提供 |
+| 告知获取方式 | 分发可执行形式时，须说明如何取得对应源码 |
+| 专利授权 | MPL 2.0 授予你使用其中专利技术的权利；但**你若就相关专利起诉原作者，这项授权立即终止** |
+| 无担保 | 按"现状"提供 |
+
+**与闭源代码结合是明确允许的：**
+
+- ✅ 可以把 MPL 代码与闭源代码链接、打包进同一个产品分发
+- ✅ 你自己写的那部分可以闭源、可以商业销售
+- ⚠️ 但**改过的 MPL 文件本身**仍需开源——不能因为"整体是闭源产品"就把它藏起来
+- 📌 边界很清楚：**文件是你改的 → 开源；没改的 → 保持原样即可**
+
+MPL 2.0 与 GPL 兼容（未声明 "Incompatible With Secondary Licenses" 时），
+MPL 文件可以并入 GPL-3.0 的大作品，但该文件及其修改仍受 MPL 约束。
+
+> 本仓库 `.openpnp2/` 收录了 OpenPnP 的机器配置，其中部分内容可能源自 Opulo
+> 提供的模板。做商业产品前，建议分清哪些文件是原始模板、哪些是自己的参数。
+
+### 文档：CC BY-SA 4.0
+
+LumenPnP 的官方文档、装配与校准指南以
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.zh-hans) 发布。
+本仓库的中英双份 README 编写时参考并改编了这些材料，因此**文档部分同样以
+CC BY-SA 4.0 提供**。
+
+| 义务 | 具体要求 |
+|------|----------|
+| BY — 署名 | 注明原作者（Opulo / LumenPnP） |
+| BY — 注明来源 | 附原作品链接 |
+| BY — 注明许可与修改 | 说明采用 CC BY-SA 4.0，并说明是否做过修改 |
+| SA — 同许可 | 你的**改编作品**须以相同许可发布，不能附加更严格的条款 |
+| 商业使用 | ✅ 允许，包括印成手册随整机出售 |
+
+**四种常见场景，边界在哪：**
+
+| 你的做法 | 是否需以 CC BY-SA 发布 |
+|----------|------------------------|
+| 翻译、改写、重排结构后用作自己的说明书 | ✅ 需要，且必须署名 Opulo |
+| 只做格式转换（转 Word、改排版），内容基本不变 | ✅ 需要——分发这个 Word 就是在"分享"该作品 |
+| 作为**独立章节**汇编进自己的大手册，其余章节自写 | ⚠️ 仅该章节需 CC BY-SA，大手册其他部分可另行许可 |
+| 仅公司内部使用，不对外分享 | ❌ 不需要——CC 许可的义务只在"分享"时触发 |
+
+> 关于"同许可"的范围有个常见误解：CC BY-SA 4.0 要求同许可的是**改编作品
+> （Adapted Material）本身**，而不是把它汇编进去的整本大作品。所以"用了
+> CC BY-SA 的一段说明，整个软件源码都得 CC BY-SA"并不成立——软件代码与文档
+> 是两类作品，各自适用各自的许可。
+
+### 本仓库固件代码：GPL-3.0
+
+`Marlin/` 的改造部分与 `buildroot/scripts/` 下的校验工具以 **GNU GPL v3.0**
+发布，全文见 [LICENSE](LICENSE)。它是强传染性（copyleft）许可，分发时
+（无论免费还是收费）需履行：
+
+| 义务 | 具体要求 |
+|------|----------|
+| 提供源码 | 分发固件（含烧录进机器出售）时，必须向接收者提供**完整对应源码**，含构建脚本与配置文件——只给二进制不够 |
+| 保留声明 | 不得删除原有版权、许可与免责声明 |
+| 标注修改 | 修改过的文件需说明"已修改"及修改时间（GPLv3 §5a） |
+| 同一许可 | 衍生作品整体仍须以 GPL-3.0 分发，不能改成更宽松或更严格的条款 |
+| 不得附加限制 | 不能对接收者行使 GPL 授予的权利再加限制（如额外收费授权、禁止逆向） |
+| 无担保 | 按"现状"提供，作者不承担质量与损害责任 |
+| 专利授权 | 贡献者自动向使用者授予其必要专利许可（GPLv3 §11） |
+
+一句话：**自己用、改、卖整机都可以，但一旦对外分发固件，源码必须跟着走。**
 
 ### 本项目自己做了什么
 
-以下改动同样以 GPL-3.0 发布，版权归本项目贡献者：
+以下改动版权归本项目贡献者（代码部分随 GPL-3.0，文档部分随 CC BY-SA 4.0）：
 
 - **配置层汉化与原位修复**：`Configuration.h` / `Configuration_adv.h` 全量中文注释，
   以及主板 + 四套飞达配置的结构修复（魔法注释、schema 兼容）
-- **文档体系**：中英双份 README（架构、引脚、构建、调试、FAQ）、配置校验说明
+- **文档体系**：中英双份 README（架构、引脚、构建、调试、G 代码、FAQ）、配置校验说明
 - **校验工具**：`buildroot/scripts/check-config-i18n.py`、
   `check-config-code-intact.py` 及 schema 基线
 - **M300 蜂鸣器旋律编辑器**：`m300_editor/`（纯前端单页，无外部依赖）
 - **开机音与默认参数调整**
 
-### GPL-3.0 意味着什么
+### Built With LumenPnP 丝印
 
-本仓库全部代码以 **GNU GPL v3.0** 发布，全文见 [LICENSE](LICENSE)。
-它是**传染性（copyleft）**许可，分发时（无论免费还是收费）需履行：
+如果你用 LumenPnP 生产 PCB，Opulo 欢迎你在板子上加一个 **"Built With LumenPnP"**
+标记——丝印文字、贴纸、Logo 都行，位置自定。
 
-| 义务 | 具体要求 |
-|------|----------|
-| 提供源码 | 分发固件（含烧录进机器出售）时，必须向接收者提供**完整的对应源码**，包含构建脚本与配置文件——只给二进制不够 |
-| 保留声明 | 不得删除原有的版权声明、许可声明与免责声明 |
-| 标注修改 | 修改过的文件需说明"已修改"及修改时间（GPLv3 §5a） |
-| 同一许可 | 衍生作品整体仍须以 GPL-3.0 分发，不能改成更宽松或更严格的条款 |
-| 不得附加限制 | 不能对接收者行使 GPL 授予的权利再加限制（如额外收费授权、禁止逆向） |
-| 无担保 | 软件按"现状"提供，作者不承担质量与损害责任 |
-| 专利授权 | 贡献者自动向使用者授予其必要专利许可（GPLv3 §11） |
-
-一句话：**自己用、改、卖整机都可以，但一旦对外分发固件，源码必须跟着走。**
+这是**授权许可，不是义务**：加不加都不影响你基于本设计进行商用，也不需要额外
+申请。对做整机或代工的团队来说，这个标记也算是对上游开源工作的一种回馈。
 
 ### 非官方声明
 

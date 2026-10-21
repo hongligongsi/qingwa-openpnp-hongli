@@ -4,7 +4,11 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg" alt="GPL-3.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/Code-GPL--3.0-blue.svg" alt="Code: GPL-3.0"></a>
+  
+  <a href="#-credits--license"><img src="https://img.shields.io/badge/HW-CERN--OHL--W%202.0-green.svg" alt="Hardware: CERN-OHL-W 2.0"></a>
+  
+  <a href="#-credits--license"><img src="https://img.shields.io/badge/Docs-CC%20BY--SA%204.0-blueviolet.svg" alt="Docs: CC BY-SA 4.0"></a>
   <img src="https://img.shields.io/badge/Marlin-2.1.x-important.svg" alt="Marlin 2.1.x">
   <img src="https://img.shields.io/badge/Board-LumenPnP%20REV5-success.svg" alt="LumenPnP REV5">
   <img src="https://img.shields.io/badge/MCU-STM32F407VET6-informational.svg" alt="STM32F407VET6">
@@ -341,7 +345,7 @@ qingwa-pnp-marlin/
 ├── Makefile                    # make shortcuts
 ├── marlin.code-workspace       # VS Code multi-root workspace
 ├── process-palette.json        # VS Code "Process Palette" → PIO Build
-├── LICENSE                     # GPL-3.0
+├── LICENSE                     # code GPL-3.0; see "Credits & License" for HW/docs
 └── README.md / README.en.md    # Multilingual docs (Chinese by default)
 ```
 
@@ -847,54 +851,173 @@ compile time and cannot be saved at runtime.
 
 ## 🤝 Credits & License
 
-### Whose shoulders this firmware stands on
+This project is not a standalone work — every layer of it builds on someone
+else's open-source effort, and those upstream projects use **three different
+licenses**. Start with "which content falls under which license", then read what
+each one means for you in practice.
 
-| Upstream project | Role in this project |
-|------------------|----------------------|
-| [Marlin](https://github.com/MarlinFirmware/Marlin) (by Scott Lahteine and the Marlin community) | The firmware core: motion planning, G-code parsing, STM32 HAL, TMC driver framework |
-| [Opulo LumenPnP](https://github.com/opulo-inc/) | REV5 motherboard hardware, the board pin file `pins_OPULO_LUMEN_REV5.h`, build board definition |
-| [TMCStepper](https://github.com/teemuatlut/TMCStepper) | UART register configuration for the TMC2209 (pulled in as a Marlin dependency) |
-| [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel) | Driver for the 18-LED strip |
-| STM32duino / STM32 hardware abstraction layer | Clock, USB CDC and timer layer for the STM32F407 |
-| [PlatformIO](https://platformio.org/) | Build system and ARM toolchain orchestration |
-| [OpenPnP](https://openpnp.org/) | The host application; the `.openpnp2/` folder here is its runtime configuration |
+### Whose shoulders, which license
 
-None of this would exist without that open-source work. Each upstream component
-keeps its own license; this project does not alter those terms.
+| Upstream project | Role here | License | Included in this repo |
+|------------------|-----------|---------|------------------------|
+| [Marlin](https://github.com/MarlinFirmware/Marlin) (Scott Lahteine and the community) | The firmware core: motion planning, G-code parsing, STM32 HAL, TMC framework | **GPL-3.0** | ✅ the whole `Marlin/` |
+| [Opulo LumenPnP](https://github.com/opulo-inc/) hardware | REV5 motherboard schematic / PCB / BOM, board pin definitions | **CERN-OHL-W 2.0** | ⚠️ pins and board constants only |
+| Opulo LumenPnP software | Feeder firmware, host-side scripts, configuration templates | **MPL 2.0** | ⚠️ `.openpnp2/` configs |
+| Opulo LumenPnP documentation | Assembly, wiring and calibration guides | **CC BY-SA 4.0** | ⚠️ this README adapts it |
+| [OpenPnP](https://openpnp.org/) | The host application | GPL-3.0 | ❌ installed separately |
+| [TMCStepper](https://github.com/teemuatlut/TMCStepper), [Adafruit NeoPixel](https://github.com/adafruit/Adafruit_NeoPixel), STM32duino | TMC2209 registers, LED driver, STM32 low level | their own terms (see the LICENSE in each `.pio/libdeps` package) | pulled in as dependencies |
+| [PlatformIO](https://platformio.org/) | Build system and ARM toolchain | Apache-2.0 | ❌ toolchain |
+
+> **The LICENSE file in each upstream repository is authoritative.** The table
+> above follows Opulo's published licensing statement; if upstream has changed a
+> version, its latest notice wins.
+
+The scope of the three copyleft licenses differs a lot — one line to remember:
+
+> **GPL covers the whole program → MPL covers individual files → CERN-OHL-W covers the design files you modified → CC BY-SA covers the adapted document.**
+
+### Hardware design: CERN-OHL-W 2.0
+
+The LumenPnP hardware (REV5 motherboard, feeders, structural parts) is released
+under the
+[CERN Open Hardware Licence v2 – Weakly Reciprocal](https://ohwr.org/cern_ohl_w_v2.txt).
+The **W (Weakly)** in the name is the key — it only applies to **the part you
+changed**.
+
+| Obligation | What it requires |
+|------------|------------------|
+| Keep attribution | Keep the original author's name (Opulo) and copyright notices — do not remove them |
+| Mark changes | Modified design files must state that they were changed, and when |
+| Publish modifications | Design files you modified (schematic, PCB, BOM, mechanical drawings) must still be offered under CERN-OHL-W 2.0 when distributed |
+| Provide a Source Location | When shipping a physical product, include a pointer to where the design files can be obtained |
+| No extra restrictions | You may not impose further restrictions downstream (no ban on improving it, no pay-to-get-the-files) |
+| No warranty | The original author is not liable for your use or modification |
+
+**What "weakly reciprocal" actually means** — this is where people get it wrong:
+
+- ✅ **You can manufacture and sell directly.** Building products with this open
+  hardware and selling complete machines is fully allowed; your manufacturing
+  process, supply chain and cost structure **stay private**
+- ✅ **Your own parts can stay closed.** Independent modules you add on top
+  (a custom expansion board, a custom fixture) may be closed-source, as long as
+  their **interface to the open part is clear** (connectors, header pinout,
+  communication protocol)
+- ⚠️ **Modified files must be published.** If you directly edit an open design
+  file (reroute a trace, swap a BOM part), **that modified file** must be opened
+  up — "I only changed a little" is not an exemption
+- ❌ **You cannot hide the open design inside a closed product.** The CERN-OHL-W
+  design files may not be distributed as part of your closed design, and you may
+  not claim the whole product is your own work
+
+> This repository **does not contain** the LumenPnP design files. It only
+> references pin definitions and board constants in
+> `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`. To modify the hardware,
+> start from [opulo-inc/lumenpnp](https://github.com/opulo-inc/lumenpnp) and
+> follow the terms above.
+
+### Upstream software: MPL 2.0
+
+Opulo's software is released under the
+[Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/). MPL is a
+**per-file** copyleft — the boundary is the file, not the program.
+
+| Obligation | What it requires |
+|------------|------------------|
+| Keep attribution | Keep the original author's name, copyright and license notices |
+| Publish modifications | MPL files you modified must continue to be offered under MPL 2.0 when distributed |
+| Point to the source | When distributing an executable form, explain how to obtain the corresponding source |
+| Patent grant | MPL 2.0 grants you rights to its patented technology — but **if you sue the original author over those patents, the grant terminates immediately** |
+| No warranty | Provided as-is |
+
+**Combining it with closed-source code is explicitly allowed:**
+
+- ✅ You may link MPL code with closed code and ship them as one product
+- ✅ Your own part may stay closed and may be sold commercially
+- ⚠️ But **the MPL files you modified** must still be published — you cannot hide
+  them behind "the overall product is closed"
+- 📌 The boundary is simple: **file you changed → publish it; file you left alone → leave it as-is**
+
+MPL 2.0 is compatible with the GPL (unless marked "Incompatible With Secondary
+Licenses"), so MPL files can join a GPL-3.0 larger work — but those files and
+their modifications remain under MPL.
+
+> The `.openpnp2/` folder here holds OpenPnP machine configuration, part of which
+> may derive from templates Opulo ships. Before building a commercial product,
+> sort out which files are original templates and which carry your own settings.
+
+### Documentation: CC BY-SA 4.0
+
+The LumenPnP documentation, assembly and calibration guides are released under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Both READMEs in
+this repository were written with reference to that material and adapt parts of
+it, so **the documentation here is likewise offered under CC BY-SA 4.0**.
+
+| Obligation | What it requires |
+|------------|------------------|
+| BY — attribution | Credit the original author (Opulo / LumenPnP) |
+| BY — source link | Link to the original work |
+| BY — license and changes | State that CC BY-SA 4.0 applies, and whether you modified it |
+| SA — share alike | Your **adapted material** must use the same license, with no stricter terms added |
+| Commercial use | ✅ Allowed, including printing it as a manual sold with machines |
+
+**Four common scenarios and where the line falls:**
+
+| What you do | Must it be released under CC BY-SA? |
+|-------------|--------------------------------------|
+| Translate, rewrite or restructure it into your own manual | ✅ Yes, and you must credit Opulo |
+| Only convert the format (to Word, adjust layout), content essentially unchanged | ✅ Yes — distributing that Word file is "sharing" the work |
+| Include it as a **standalone chapter** in your own larger manual, the rest self-written | ⚠️ Only that chapter needs CC BY-SA; the rest of the manual may be licensed separately |
+| Internal company use only, never shared | ❌ No — CC obligations only trigger on sharing |
+
+> One common misconception about share-alike: CC BY-SA 4.0 requires the same
+> license for the **Adapted Material itself**, not for the larger work it is
+> compiled into. So "I used one CC BY-SA paragraph, therefore all my software
+> source must be CC BY-SA" does not hold — software code and documentation are
+> different types of work, each under its own license.
+
+### Firmware code in this repository: GPL-3.0
+
+The modified parts of `Marlin/` and the verification tools under
+`buildroot/scripts/` are released under **GNU GPL v3.0** — see [LICENSE](LICENSE).
+It is a strong copyleft license, so distribution (free or paid) requires:
+
+| Obligation | What it requires |
+|------------|------------------|
+| Provide source | Ship the **complete corresponding source**, including build scripts and configs, with any firmware you distribute (including machines you sell). A binary alone is not enough |
+| Keep notices | Do not strip existing copyright, license or warranty notices |
+| Mark changes | Modified files must say they were changed and when (GPLv3 §5a) |
+| Same license | Derivative works must stay GPL-3.0 — no relicensing to looser or stricter terms |
+| No extra restrictions | You may not restrict the rights GPL grants (paid-only licensing, a ban on reverse engineering, ...) |
+| No warranty | Provided as-is; authors are not liable for defects or damages |
+| Patent grant | Contributors automatically grant users a license to their necessary patents (GPLv3 §11) |
+
+In one sentence: **use it, modify it, sell machines built with it — but the moment
+you distribute the firmware, the source has to travel with it.**
 
 ### What this project adds
 
-The following changes are also released under GPL-3.0, copyright the contributors
-of this repository:
+Copyright for the following belongs to the contributors of this repository (code
+under GPL-3.0, documentation under CC BY-SA 4.0):
 
 - **Configuration layer**: full Simplified-Chinese comments in `Configuration.h` /
   `Configuration_adv.h`, plus structural repairs to the motherboard and four feeder
   configs (machine-readable comments, schema compatibility)
-- **Documentation**: bilingual READMEs (architecture, pinout, build, debugging, FAQ)
-  and the configuration-checking guide
+- **Documentation**: bilingual READMEs (architecture, pinout, build, debugging,
+  G-code, FAQ) and the configuration-checking guide
 - **Verification tooling**: `buildroot/scripts/check-config-i18n.py`,
   `check-config-code-intact.py` and the schema baseline
 - **M300 melody editor**: `m300_editor/` (single-page front end, no external deps)
 - **Startup tune and default-parameter adjustments**
 
-### What GPL-3.0 means in practice
+### Built With LumenPnP silkscreen
 
-Everything here is released under the **GNU GPL v3.0** — see [LICENSE](LICENSE).
-It is a **copyleft** license, so whenever you distribute the firmware (free or
-paid) you must:
+If you use a LumenPnP to produce PCBs, Opulo welcomes a **"Built With LumenPnP"**
+mark on the board — silkscreen text, a sticker or a logo, wherever it fits.
 
-| Obligation | What it requires |
-|------------|------------------|
-| Provide source | Ship the **complete corresponding source**, including build scripts and configs — with any machine you sell that carries this firmware. A binary alone is not enough |
-| Keep notices | Do not strip existing copyright, license or warranty notices |
-| Mark changes | Modified files must carry a notice that they were changed and when (GPLv3 §5a) |
-| Same license | Derivative works must stay under GPL-3.0 — you cannot relicense them |
-| No extra restrictions | You may not add terms that restrict the rights GPL grants (e.g. a paid-only license, a ban on reverse engineering) |
-| No warranty | The software is provided as-is; authors are not liable for defects or damages |
-| Patent grant | Contributors automatically grant users a license to their necessary patents (GPLv3 §11) |
-
-In one sentence: **use it, modify it, sell machines built with it — but the moment
-you distribute the firmware, the source has to travel with it.**
+That is a **permission, not an obligation**: adding it or not has no effect on
+your commercial rights under this design, and no approval is needed. For teams
+building or contract-manufacturing machines, the mark is also a nice nod back to
+the upstream open-source work.
 
 ### Not an official release
 
