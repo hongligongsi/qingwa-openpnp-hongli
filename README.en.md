@@ -30,6 +30,7 @@
 - [⚙️ Building & Flashing](#️-building--flashing)
 - [🔧 Configuration & Versioning](#-configuration--versioning)
 - [🧰 Common G-code](#-common-g-code)
+- [🎛 Tuning quick reference: speed / current / light](#-tuning-quick-reference-speed--current--light)
 - [🛠 FAQ](#-faq)
 - [🤝 Credits & License](#-credits--license)
 
@@ -211,7 +212,7 @@ uses the physical switches. Enabling it requires turning that macro on and tunin
 | Controller fan (auto) | `PE2` | active, spins whenever a motor is enabled |
 | Buzzer | `PA7` | active (`SPEAKER`) |
 | NeoPixel strip | `PC7` | active, 18 LEDs, `NEO_GRB` |
-| Second NeoPixel | `PC8` | defined but unused (`NEOPIXEL2_SEPARATE` off) |
+| Second NeoPixel | `PC8` | active, 18 LEDs; address it separately with `M150 S1 ...` |
 
 **④ Buses**
 
@@ -693,8 +694,10 @@ so those handlers are removed at build time. Three markers are used below:
 |---------|--------|-------|
 | `M106 P<0-3> S<0-255>` | ✅ | Four PWM fans (`PB8` / `PB9` / `PE5` / `PE6`) |
 | `M107 P<0-3>` | ✅ | Turn the matching fan off |
-| `M150` | ✅ | NeoPixel colour: `M150 R255 U0 B0` (`U` is green — the strip is GRB) |
-| `M150 P...` | ✅ | Limit the update to the first N LEDs or a range |
+| `M150 R.. U.. B..` | ✅ | NeoPixel colour; `U` is the green channel (`G` is taken by G-code) |
+| `M150 P<0-255>` | ✅ | **Brightness**: `P0` off, `P127` half, bare `P` = 255 full |
+| `M150 S0` / `S1` | ✅ | Address only strip 1 (`PC7`) / strip 2 (`PC8`); omit `S` to set both |
+| `M150 I<n>` | ✅ | Change only LED n (`I` is the index, `P` is brightness) |
 | `M300 S<Hz> P<ms>` | ✅ | Beep, `M300 S523 P200` plays C5 |
 | `M300 S0` | ✅ | Mute immediately — handy during debugging |
 
@@ -722,7 +725,7 @@ G0 X50 Y50 F3000        ; 5. slow test move
 M114                    ; 6. verify the reported position matches reality
 M122                    ; 7. check the drivers for connection errors
 M300 S523 P150          ; 8. test the buzzer
-M150 R0 U255 B0 P16     ; 9. test the LED strip (green)
+M150 R0 U255 B0         ; 9. test the LED strip (green, full brightness)
 M84                     ; 10. release the motors
 ```
 
@@ -737,6 +740,117 @@ M114                    ; report axis positions (rotary axes in degrees)
 ```
 
 Full command reference: [Marlin G-code docs](https://marlinfw.org/docs/gcode/M000-M001.html).
+
+---
+
+## 🎛 Tuning quick reference: speed / current / light
+
+All three can be changed at **three different layers**, and changing the wrong
+layer "looks like it worked but doesn't". The division of labour:
+
+| Layer | What it controls | Rebuild needed? |
+|-------|------------------|-----------------|
+| OpenPnP (`.openpnp2/machine.xml`) | The `F` value actually sent, the current re-sent on every connect | ❌ |
+| Marlin firmware (`Configuration*.h`) | Safety ceilings, power-on defaults | ✅ |
+| Runtime G-code (serial / scripts) | Temporary, lost on reboot | ❌ |
+
+> Precondition: **`EEPROM_SETTINGS` is not enabled** in this firmware (see FAQ),
+> so any runtime `M9xx` / `M2xx` change is **not saved across power cycles**.
+
+### 1. Machine speed
+
+**The key point: OpenPnP sends `G1 ... F200`, and that `F` comes from the OpenPnP
+axis feedrate, not from the firmware.** The firmware's `DEFAULT_MAX_FEEDRATE`
+(7000 mm/s) is only a safety ceiling — raising it will not make the machine
+faster, and lowering it will clip your commands.
+
+| What you want to change | Where |
+|-------------------------|-------|
+| Actual move speed | OpenPnP → Machine Setup → Axes → `x` / `y` / `z1` → **Feedrate** |
+| Actual acceleration | **Acceleration** on the same page |
+| Firmware safety ceiling | `DEFAULT_MAX_FEEDRATE` / `DEFAULT_MAX_ACCELERATION` in `Configuration.h`, or `M203` / `M201` at runtime |
+| Temporary global slowdown | `M220 S50` (half speed) over serial, `M220 S100` to restore |
+
+Measured values in this configuration (from `.openpnp2/machine.xml`):
+
+| Axis | Feedrate | Acceleration |
+|------|----------|--------------|
+| `x` | 200 mm/s | 1500 mm/s² |
+| `y` | 200 mm/s | 1500 mm/s² |
+| `z1` | 300 mm/s | 1200 mm/s² |
+| `a` / `b` (rotary) | 50000 °/s | 500 |
+
+**Tuning advice**: 200 mm/s on X/Y is already fast (12 m/min); the real PnP
+bottleneck is usually **acceleration and Z travel**, not cruise speed. Try raising
+acceleration first (1500 → 2500 → 3000) — it pays off far more than pushing the
+feedrate, which invites lost steps and poor positioning.
+
+Reconnect once in OpenPnP (or restart it) after changing these.
+
+### 2. Motor current
+
+**The easiest route: edit the OpenPnP connect script — no firmware rebuild.**
+
+Because EEPROM is off, current values in the firmware are lost on reboot — but the
+`CONNECT_COMMAND` in `machine.xml` re-sends them on every connection:
+
+```gcode
+M906 Y1000 X900   ; set Y/X motor current
+M906 A200 B200    ; set L/R (rotary A/B) motor current
+```
+
+Edit those two lines (units are **mA RMS**). To cover Z, add `M906 Z800`. Note that
+`A` / `B` are the firmware's I/J rotary axes (`AXIS4_NAME 'A'`, `AXIS5_NAME 'B'`).
+
+Compile-time defaults live in `Configuration_adv.h`:
+
+| Macro | Value | Axis |
+|-------|-------|------|
+| `X_CURRENT` | 800 mA | X |
+| `Y_CURRENT` | 1000 mA | Y (dual motors) |
+| `Z_CURRENT` | 800 mA | Z |
+| `I_CURRENT` | 200 mA | rotary A (called `a` in OpenPnP) |
+| `J_CURRENT` | 200 mA | rotary B (called `b` in OpenPnP) |
+
+⚠️ **Do not simply crank it up**: a TMC2209 held above **1200 mA** gets noticeably
+hot, and with poor cooling it will hit thermal protection and lose steps. The
+200 mA on the rotary axes is deliberate (light load); if rotation slips, raise it
+**100 mA at a time**.
+
+### 3. Ring light brightness
+
+The ring light is driven by `M150`: **brightness is `P` (0–255), colour is
+`R` / `U` / `B`** (`U` = green, because `G` is taken by G-code).
+
+| Goal | Command |
+|------|---------|
+| Full white, maximum | `M150 P255 R255 U255 B255` |
+| About 40%, keeping the colour | `M150 K P102` |
+| Warm white (kinder for long sessions) | `M150 P255 R255 U180 B80` |
+| Off | `M150 P0` |
+| Only the second strip | `M150 S1 P255 R255 U255 B255` |
+
+⚠️ `M150 P102` on its own clears the colour (so nothing lights up) — add `K` to
+change brightness while keeping the colour.
+
+**To pin a brightness in OpenPnP**: Machine Setup → actuator `LED` → its on
+command is `M150 P255 R255 U255 B255`; lower the `P255` (e.g.
+`M150 P120 R255 U255 B255`) so every actuation uses that level automatically.
+
+### 4. What survives a reboot
+
+| How you changed it | Rebuild? | Persists? |
+|--------------------|----------|-----------|
+| OpenPnP axis feedrate / acceleration | ❌ | ✅ |
+| `M906` in the OpenPnP connect script | ❌ | ✅ (re-sent on every connect) |
+| Brightness of the OpenPnP `LED` actuator | ❌ | ✅ |
+| `M203` / `M201` / `M204` over serial | ❌ | ❌ |
+| `M906` over serial | ❌ | ❌ |
+| `M150` over serial | ❌ | ❌ |
+| Editing `Configuration*.h` and reflashing | ✅ | ✅ |
+
+> To make runtime `M906` persistent, enable `EEPROM_SETTINGS` in `Configuration.h`
+> and rebuild (the board already provides 8 KB of SRAM emulation).
 
 ---
 
@@ -819,6 +933,44 @@ if you need persistence. To inspect the parameters in effect right now, just sen
 </details>
 
 <details>
+<summary><b>How do I dim the ring light or change its colour?</b></summary>
+
+The ring light is a WS2812 strip on `PC7` (`NEOPIXEL_PIN`, 18 LEDs, `NEO_GRB`),
+driven by `M150`. **Brightness is `P`, colour is `R` / `U` / `B`** — `U` is the
+green channel because `G` is already taken by G-code.
+
+| Goal | Command |
+|------|---------|
+| Full white, maximum | `M150 P255 R255 U255 B255` |
+| 40% brightness, keeping the colour | `M150 K P102` |
+| Warm white (easier on the eyes) | `M150 P255 R255 U180 B80` |
+| Off | `M150 P0` |
+| Only strip 1 / strip 2 | `M150 S0 ...` / `M150 S1 ...` |
+
+⚠️ **Two traps:**
+
+1. **`P` is brightness (0–255), not a pixel count.** To change LED *n* only,
+   use `I<n>`.
+2. **`M150 P102` on its own clears the colour** (unspecified channels default to
+   0, i.e. dark). To change brightness while keeping the colour, add `K`:
+   `M150 K P102`. Otherwise write all three colour channels.
+
+Omitting `S` addresses both strips (`PC7` + `PC8`); if your machine only has the
+ring light wired, the second strip only reacts when LEDs are attached.
+
+**To pin a brightness in OpenPnP**: Machine Setup → actuator `LED` → its on
+command is `M150 P255 R255 U255 B255`, off is `M150 P0`. Lower the `P255`
+(e.g. `M150 P120 R255 U255 B255`) so every actuation uses the same comfortable
+level instead of retyping it.
+
+> Brightness changes intensity, not colour temperature. If vision fails from
+> overexposure, lower `P` first rather than turning the light off — with no
+> light the part outline disappears too. Note that `NEOPIXEL_STARTUP_TEST` is
+> enabled, so the strip cycles red/green/blue at power-up; that is a self-test,
+> not a fault.
+</details>
+
+<details>
 <summary><b>How do I change the startup beeper sound?</b></summary>
 
 The startup tune lives in `STARTUP_COMMANDS` in `Marlin/Configuration_adv.h`
@@ -845,6 +997,36 @@ G-codes executed at boot:
 
 Remember to rebuild and reflash afterwards — the startup tune is baked in at
 compile time and cannot be saved at runtime.
+</details>
+
+<details>
+<summary><b>How do I use the M300 melody editor?</b></summary>
+
+The repo ships a plain HTML tool, `m300_editor/index.html`, for editing the
+startup tune visually on your computer.
+
+**Opening it:**
+- double-click `m300_editor/index.html` in a file manager, or
+- run `python -m http.server 8765` in the project root and open
+  `http://127.0.0.1:8765/m300_editor/index.html`.
+
+**Typical flow:**
+1. Paste the G-code from inside `STARTUP_COMMANDS` into the import box at the
+   bottom of the page and click "⬆ import from below" — the note table fills in
+   with frequencies and durations.
+2. Add, remove or edit notes (Hz / ms), or click a preset (simple beep, Morse
+   rhythm, Do-Mi-Sol, startup melody, ...).
+3. Click "▶ Play" to preview; click a block on the timeline to audition a single
+   note.
+4. When happy, click "⬇ Export G-code" → "📋 Copy" and paste it back inside the
+   quotes of `STARTUP_COMMANDS` in `Configuration_adv.h`, then rebuild and flash.
+
+**About custom waveforms:** the editor offers hand-drawn waveforms and harmonic
+sliders, but those only affect the **browser preview**. The piezo buzzer on the
+board only produces square waves — `M300` controls frequency and duration and
+nothing more.
+
+Full tutorial with screenshots: [m300_editor/README.md](m300_editor/README.md).
 </details>
 
 ---
