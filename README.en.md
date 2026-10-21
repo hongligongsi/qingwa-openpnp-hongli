@@ -48,10 +48,13 @@ This project is the firmware for the **Qingwa (Frog) Pick-and-Place machine**. I
 A complete Qingwa PnP machine has two major parts, each running its own firmware
 built from the **same source tree**:
 
-1. **Motherboard** — the "brain and limbs" of the machine. Based on the
-   **Opulo LumenPnP Motherboard REV05** (MCU: **STM32F407VET6**, ARM Cortex-M4,
-   512 KB Flash / 192 KB SRAM), it drives gantry X/Y positioning, Z lift,
-   dual-motor sync (X/Y2), endstop sensing, and camera/lighting/vacuum peripherals.
+1. **Motherboard** — the "brain and limbs" of the machine. The physical board is a
+   **custom Qingwa carrier board** (MCU: **STM32F407VET6**, ARM Cortex-M4,
+   512 KB Flash / 192 KB SRAM) whose pinout is **fully compatible with the Opulo
+   LumenPnP Motherboard REV05** (verified pin by pin — see
+   [Hardware & Pinout](#-hardware--pinout)), so the firmware simply uses the REV5
+   board definition. It drives gantry X/Y positioning, Z lift, dual-motor sync
+   (X/Y2), endstop sensing, and camera/lighting/vacuum peripherals.
    It is the **default build target** of this repo.
 
 2. **Feeder (electric tape feeder)** — indexes component tape pockets into the pick
@@ -163,6 +166,10 @@ How to choose among the four feeder configs:
 
 | Item | Value |
 |------|-------|
+| Physical board | Frog carrier board (custom design, **pin-compatible** with LumenPnP REV5) |
+| Schematic | `docs/hardware/SCH_插板_主板电路图.pdf` (JLCEDA V1.0, 2026-07-20) |
+| Gerber / drill | `docs/hardware/Gerber_主板_2026-10-21.zip` (16 files, fab-ready) |
+| Pin verification | ✅ checked pin by pin against the schematic — all match (details in `docs/hardware/主板电路图核对.md`) |
 | Board name (M115) | `LumenPnP Motherboard REV05` |
 | Machine name | `LumenPnP` |
 | MCU | STM32F407VET6 (ARM Cortex-M4 @ 168 MHz) |
@@ -171,19 +178,29 @@ How to choose among the four feeder configs:
 
 ### Complete pin map (from `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`)
 
+> ✅ **Verified pin by pin against the physical board schematic**
+> (`docs/hardware/SCH_插板_主板电路图.pdf`): all six axes' STEP/DIR/EN/UART/DIAG,
+> endstops, buzzer, lights, AUX, RS485 and ID pins **match exactly** — no firmware
+> change is needed to drive this board.
+
 Every pin is defined in that single header. "Status" means whether this firmware
-config actually uses it.
+config actually uses it. "Silkscreen" is the net/axis label printed on the schematic.
 
 **① Stepper motors (6 × TMC2209, single-wire UART)**
 
-| Axis | STEP | DIR | ENABLE | UART (TX=RX) | DIAG | Status |
-|------|------|-----|--------|--------------|------|--------|
-| X | `PB15` | `PB14` | `PD9` | `PD8` | `PB10` | active |
-| Y | `PE15` | `PE14` | `PB13` | `PB12` | `PB11` | active |
-| Y2 | `PD6` | `PD7` | `PA3` | `PA2` | `PC12` | active (dual Y) |
-| Z | `PE7` | `PB1` | `PE9` | `PE8` | `PB5` | active |
-| A (I axis) | `PC4` | `PA4` | `PB0` | `PC5` | `PC10` | active (rotary) |
-| B (J axis) | `PE11` | `PE10` | `PE13` | `PE12` | `PC11` | active (rotary) |
+| Axis | Silkscreen | STEP | DIR | ENABLE | UART (TX=RX) | DIAG | Motor connector | Status |
+|------|-----------|------|-----|--------|--------------|------|-----------------|--------|
+| X | X | `PB15` | `PB14` | `PD9` | `PD8` | `PB10` | CN29 | active |
+| Y | Y1 | `PE15` | `PE14` | `PB13` | `PB12` | `PB11` | CN30 | active |
+| Y2 | Y2 | `PD6` | `PD7` | `PA3` | `PA2` | `PC12` | CN34 | active (dual Y) |
+| Z | Z | `PE7` | `PB1` | `PE9` | `PE8` | `PB5` | CN32 | active |
+| A (I axis) | L (left nozzle) | `PC4` | `PA4` | `PB0` | `PC5` | `PC10` | CN33 | active (rotary) |
+| B (J axis) | R (right nozzle) | `PE11` | `PE10` | `PE13` | `PE12` | `PC11` | CN31 | active (rotary) |
+
+> Silkscreen **L = left nozzle rotation** (firmware I axis, G-code `A`) and
+> **R = right nozzle rotation** (firmware J axis, G-code `B`). Each driver socket's
+> `DIAG` pin is **left open by default** — short the jumper first if you want
+> sensorless (StallGuard) homing.
 
 UART is **single-wire half duplex**: TX and RX are the same pin, talking over the
 TMC2209 PDN_UART line at a fixed `19200` baud (lower rate for reliability). Note
@@ -204,24 +221,29 @@ uses the physical switches. Enabling it requires turning that macro on and tunin
 
 **③ Fans / buzzer / LEDs**
 
-| Function | Pin | Status |
-|----------|-----|--------|
-| FAN0 (`M106 P0`) | `PB8` | active (`FAN_COUNT` = 4) |
-| FAN1 (`M106 P1`) | `PB9` | active |
-| FAN2 (`M106 P2`) | `PE5` | active |
-| FAN3 (`M106 P3`) | `PE6` | active |
-| Controller fan (auto) | `PE2` | active, spins whenever a motor is enabled |
-| Buzzer | `PA7` | active (`SPEAKER`) |
-| NeoPixel strip | `PC7` | active, 18 LEDs, `NEO_GRB` |
-| Second NeoPixel | `PC8` | active, 18 LEDs; address it separately with `M150 S1 ...` |
+| Function | Silkscreen | Pin | Status |
+|----------|-----------|-----|--------|
+| Output 1 (`M106 P0`) | MOS-1 → CN24 | `PB8` | active (`FAN_COUNT` = 4), 24V low-side switch |
+| Output 2 (`M106 P1`) | MOS-2 → CN23 | `PB9` | active, 24V low-side switch |
+| Output 3 (`M106 P2`) | MOS-3 → CN22 | `PE5` | active, 24V low-side switch |
+| Output 4 (`M106 P3`) | MOS-4 → CN21 | `PE6` | active, 24V low-side switch |
+| Auxiliary fan (controller fan) | FAN | `PE2` | active, spins while any motor is enabled, off 120 s after idle |
+| Buzzer | BUZZER | `PA7` | active (`SPEAKER`) |
+| Bottom ring light | BTM-LIGHT | `PC7` | active, 18 LEDs, `NEO_GRB` |
+| Top ring light | TOP-LIGHT | `PC8` | active, 18 LEDs; address it separately with `M150 S1 ...` |
+
+> MOS-1…4 are **24V low-side switch outputs** (30H10K NMOS + flyback diode) — good
+> for vacuum pumps, solenoids and small fans; drive them with `M106 P0..P3 S0..255`.
+> Ring lights: MCU → SN74LVC2G34 buffer (3.3V→5V level shift) → XH2.54-3P
+> (5V / signal / GND), a standard WS2812 hookup, so the `M150` docs apply as-is.
 
 **④ Buses**
 
 | Bus | Pins | Purpose |
 |-----|------|---------|
 | SPI | MISO `PB4` / MOSI `PB5` / SCK `PB3` | spare TMC SPI mode (UART is used instead) |
-| I²C | SDA `PB7` / SCL `PB6` | I²C peripherals, also on the AUX port |
-| RS485 | TX enable `PD11` / RX enable `PD12` | feeder / peripheral comms |
+| I²C | SDA `PB7` / SCL `PB6` | on-board PCA9545A mux (see ⑥), also on the AUX port |
+| RS485 | DI `PA9` / RO `PA10` / DE `PD11` / RE `PD12` | MAX3078 transceiver to the `FEEDERS` terminal (smart feeder bus) |
 
 > ⚠️ `PB5` is shared between `Z_DIAG_PIN` and `MOSI_PIN`. Harmless here because the
 > TMCs use UART rather than SPI; if you attach an SPI device, Z sensorless homing
@@ -231,17 +253,32 @@ uses the physical switches. Enabling it requires turning that macro on and tunin
 
 | Function | Pins | Notes |
 |----------|------|-------|
-| Board revision ID | `PD0` / `PD1` / `PD2` / `PD3` | set input pullup before reading (`M42`/`M43` examples at the end of the header) |
-| General IO (AUX control) | `PD13` | writable and readable |
+| Board revision ID | `PD0` / `PD1` / `PD2` / `PD3` | ID0–ID3 selected by 0 Ω resistors; set input pullup before reading (`M42`/`M43` examples at the end of the header) |
+| General IO (AUX control) | `PD13` | net `AUX`, writable and readable |
 | USB | `PA11` / `PA12` | fixed by the MCU, virtual serial port |
-| SWD debug | `PA13` / `PA14` | ST-Link flashing / debugging |
+| SWD debug | `PA13` / `PA14` | ⚠️ also brought out as `IO72` / `IO76` with 4.7 kΩ pullups — keep external devices off these lines while debugging |
+| BOOT1 | `PB2` | 10 kΩ pulldown, boots from main Flash normally |
 | EEPROM | none on board | SRAM emulation, 8 KB (`MARLIN_EEPROM_SIZE 0x2000`), but `EEPROM_SETTINGS` is off |
 
-**⑥ Unassigned pins**
+**⑥ Wired on the board, not used by this firmware**
 
-`PA0`, `PA1`, `PA8`–`PA10`, `PB2` (BOOT1), `PC1`–`PC3`, `PC9`, `PC13`–`PC15`,
-`PD4`, `PD5`, `PD10`, `PE0`, `PE1`, `PE3`, `PE4` are free in the pin header —
-handy for custom additions such as extra sensors or pneumatic valves.
+These circuits are populated but have no macro in the current config — write your
+own if you want them:
+
+| Circuit | Device | Pins |
+|---------|--------|------|
+| Smart feeder bus | MAX3078 RS485 transceiver | `PA9`(DI) / `PA10`(RO) / `PD11`(DE) / `PD12`(RE) |
+| Vacuum pressure sensing | 2 × XGZP6857D | I²C through a PCA9545A 4-channel mux (`PB6`/`PB7`), one per nozzle |
+| Nozzle head detect | net `CHIMERA` | `PC1` (via jumper T9) |
+| Expansion headers | H6 / CN20 | `PA13`/`PA14` (`IO72`/`IO76`), `PA5`/`PA6`/`PA15`/`PC0` (AUX) |
+
+**⑦ Unassigned pins**
+
+`PA0`, `PA1`, `PA8`, `PB3`, `PB4`, `PC2`, `PC3`, `PC9`, `PC13`–`PC15`,
+`PD4`, `PD5`, `PD10`, `PE0`, `PE1`, `PE3`, `PE4` are **floating / unconnected** both
+in the pin header and on the schematic — handy for custom additions such as extra
+sensors or pneumatic valves. (`PB3`/`PB4` are reserved as SPI SCK/MISO by the
+firmware but are free if you don't use SPI.)
 
 ### Kinematics & travel parameters (from `Marlin/Configuration.h`)
 
@@ -353,6 +390,7 @@ qingwa-pnp-marlin/
 │   ├── share/vscode/auto_build.py                #   Auto Build (PIO Build)
 │   └── tests/                  #   make tests-all-local etc.
 ├── config/  docker/  docs/     # Docs / Docker / dev docs (Bresenham, Serial…)
+│   └── hardware/               #   ⭐ motherboard schematic PDF + pin cross-check report
 ├── ini/                        # PlatformIO env matrix (grouped by MCU)
 │   └── stm32f4.ini             #   contains [env:Opulo_Lumen_REV3] / REV4 / REV5
 ├── .editorconfig  .gitattributes
