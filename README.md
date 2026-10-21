@@ -36,6 +36,7 @@
 - [✨ 功能特性](#-功能特性)
 - [🧱 硬件与引脚](#-硬件与引脚)
 - [🏗 目录结构](#-目录结构)
+- [🧑‍🏫 零基础先读：5 个词 + 3 样准备](#-零基础先读5-个词--3-样准备)
 - [🚀 快速上手](#-快速上手)
 - [⚙️ 构建与烧录](#-构建与烧录)
 - [🔧 配置修改与版本管理](#-配置修改与版本管理)
@@ -400,9 +401,75 @@ qingwa-pnp-marlin/
 
 ---
 
+## 🧑‍🏫 零基础先读：5 个词 + 3 样准备
+
+如果你从没刷过单片机固件，花 3 分钟看完这一节，后面会顺很多；
+已经刷过别的板子，可以直接跳到「快速上手」。
+
+### 先认识 5 个词
+
+| 词 | 一句话解释 | 在本项目里具体指什么 |
+|----|-----------|----------------------|
+| **固件（Firmware）** | 烧进单片机、一通电就跑的程序 | `firmware.bin`，约 120 KB |
+| **主板 / 飞达** | 两块不同的电路板，各有一片 STM32 芯片 | 主板管机头 X/Y/Z，飞达管送料 |
+| **上位机（Host）** | 电脑上用来控制机器的软件 | OpenPnP |
+| **G 代码** | 用纯文本「发命令」的格式 | `G1 X10 Y20 F3000` = 移到 (10, 20) |
+| **构建 / 编译** | 把源码变成能烧的 `firmware.bin` | 一条 `pio run` 命令 |
+
+另外两个你一定会撞见的词：
+
+- **env（环境）**：同一份源码的「编译配方」。本项目有 `Opulo_Lumen_REV5`、
+  `REV4`、`REV3` 三套 —— 选错 env 等于给 A 板刷了 B 板固件，刷完不开机
+- **DFU**：STM32 芯片自带的「刷机模式」，只有进入这个模式，电脑才能往里写固件
+
+### 你只需要准备 3 样东西
+
+| 类别 | 需要什么 | 说明 |
+|------|----------|------|
+| **板子** | 主板（REV5），或飞达主控（REV3 / REV4） | 只刷主板就不用管飞达 |
+| **USB 线** | 一根**能传数据**的线 | ⚠️ 很多线只供电不传数据，这是最常见的一个坑 |
+| **软件** | VS Code + PlatformIO IDE 扩展 | 装一次，编译器与依赖由它自己下载 |
+
+**不用装的东西**（不少教程会让你装，其实不必）：
+
+- ❌ 不用单独装 `arm-none-eabi-gcc` —— PlatformIO 会自动下载匹配版本
+- ❌ 不用配 Python 环境 —— 扩展自带
+- ❌ 不用装 git —— 也可以在仓库页面点 **Code → Download ZIP** 直接解压
+
+> **Windows 用户**可以额外备一个 [Zadig](https://zadig.akeo.ie/)，
+> 只在「DFU 设备认不出来」时才用得到（见第 3 步）。
+
+### 先确认你属于哪一类
+
+| 你的目标 | 看哪几节 | 要不要装编译环境 |
+|----------|----------|------------------|
+| 只想让机器跑起来 | 快速上手 → 构建与烧录 | ✅ 要 |
+| 只想调速度 / 电流 / 灯亮度 | 常用调整速查（前三节全在 OpenPnP 里改） | ❌ 不用 |
+| 想改固件参数（上限、微步、行程） | 常用调整速查 → 四、直接改固件 | ✅ 要 |
+| 想改代码、加功能 | 目录结构 → `Marlin/src/` | ✅ 要 |
+
+> 新手走第一条就好。**在「能连上、能归位」跑通之前，别急着改配置**——
+> 否则出了问题，分不清是参数写错了还是线接错了。
+
+### 你以后大概率只会碰这 3 个文件
+
+| 文件 | 改什么 | 改完要做 |
+|------|--------|----------|
+| `Marlin/Configuration.h` | 行程、速度上限、限位方向、灯带、蜂鸣器开关 | 重编译 + 烧录 |
+| `Marlin/Configuration_adv.h` | TMC2209 电流与微步、归位策略、开机音、串口缓冲 | 重编译 + 烧录 |
+| `ini/stm32f4.ini` | 构建目标与上传方式（一般不用动） | 重编译 |
+
+其余部分**不用看也不用改**：`Marlin/src/` 下是 Marlin 原版源码（运动规划、
+G 代码解析、STM32 底层），本仓库一行没动过；`Marlin/rev5-config/`、
+`Marlin/rev*-feeder-config/` 只是配置存档，不参与编译。具体见「目录结构」一节。
+
+---
+
 ## 🚀 快速上手
 
-从零开始把一台贴片机主板跑起来，只需 5 步（约 15 分钟，首次编译除外）：
+从零开始把一台贴片机主板跑起来，只需 5 步。熟悉流程后约 15 分钟，
+首次编译要下载工具链，请预留半小时。每一步都写了「怎么判断成功」和
+「卡住了怎么办」，照着做即可。
 
 ### 第 1 步：安装构建环境
 
@@ -416,6 +483,12 @@ qingwa-pnp-marlin/
    cd qingwa-openpnp-hongli
    ```
 
+**确认装好了**：命令行执行 `pio --version`，能打印出版本号就行；
+用 VS Code 的话，左侧活动栏出现 PlatformIO 的蚂蚁图标即算装好。
+
+> 没装 git？在仓库页面点 **Code → Download ZIP**，解压出来的目录内容完全一样，
+> 后面所有命令照用（在解压出来的文件夹里打开终端即可）。
+
 ### 第 2 步：编译主板固件
 
 不用改任何东西——默认配置就是 REV5 主板：
@@ -425,8 +498,20 @@ pio run
 ```
 
 首次编译会下载依赖库并全量构建，耗时数分钟；之后增量编译很快。
-编译成功的标志是输出 `SUCCESS` 和固件体积统计（Flash 应约 22%、RAM 约 7%），
-产物位于 `.pio/build/Opulo_Lumen_REV5/firmware.bin`（与 `.elf`）。
+
+**怎么判断成功了**：最后几行出现 `SUCCESS` 和体积统计，类似：
+
+```text
+RAM:   [==        ]  6.8% (used 13720 bytes from 202752 bytes)
+Flash: [===       ] 22.7% (used 119700 bytes from 524288 bytes)
+SUCCESS
+```
+
+产物在 `.pio/build/Opulo_Lumen_REV5/firmware.bin`（同目录还有 `.elf`）。
+
+> ⏳ 第一次编译要联网下载整个工具链，**卡在 `Downloading` 五到十分钟很正常**，
+> 别急着按 Ctrl+C。之后改配置再编译，一般十几秒就完事。
+> 报错了看最后一条 `Error` 的英文原句，FAQ 里有「`pio run` 编译失败」一条对照排查。
 
 ### 第 3 步：让主板进入烧录模式
 
@@ -437,6 +522,15 @@ pio run
 3. 插上 USB 线连接电脑——设备管理器（Windows）或 `lsusb`（Linux）里应出现
    `STM32 BOOTLOADER`。
 
+**如果 Windows 认不出来**（设备管理器里是带黄色感叹号的 `STM32 BOOTLOADER`，
+或根本没有任何新设备）：
+
+1. 打开 [Zadig](https://zadig.akeo.ie/) → 菜单 **Options → List All Devices**；
+2. 下拉列表里选 `STM32 BOOTLOADER`（若没有，说明板子没进 DFU，重做上面三步）；
+3. 右边目标驱动选 **WinUSB** → 点 **Replace Driver**，等它装完。
+
+这一步只需要做一次，以后刷固件都不用再管。
+
 > 如果主板已刷过本固件且 DFU 触发正常，也可直接 `pio run -t upload`，
 > PlatformIO 会自动检测 DFU 设备。
 
@@ -446,7 +540,17 @@ pio run
 pio run -e Opulo_Lumen_REV5 -t upload
 ```
 
-看到 `File downloaded successfully` 即成功，拔插 USB 复位后固件即运行。
+看到 `File downloaded successfully` 即成功，拔插 USB 复位后固件即运行
+（此时蜂鸣器会响一小段开机音，灯带会闪一遍红绿蓝——这两个都是正常自检）。
+
+**卡住了怎么办**：
+
+| 报错 | 原因 | 处理 |
+|------|------|------|
+| `No DFU capable USB device available` | 没进 DFU 模式 | 回第 3 步重做；注意顺序是「按住 BOOT0 → 点 RESET → 松开 BOOT0」 |
+| 上一步正常，这一步报权限错误（Linux） | udev 规则没配 | 加一条 udev 规则，或用 `sudo` 跑一次 |
+| 烧到一半失败 | USB 线/口不稳 | 换线、换到主板后置 USB 口，别用 USB Hub |
+| DFU 死活进不去 | 引导程序被破坏 | 用 **ST-Link** 接 SWD 烧录（见「构建与烧录 → 烧录方式详解」） |
 
 ### 第 5 步：连接验证
 
@@ -462,6 +566,37 @@ M115            ; 回报固件版本与机器名（应含 LumenPnP）
 M119            ; 查询限位状态
 G28             ; 全轴归位（先确认限位接线正确再执行！）
 ```
+
+`M115` 会回一行能力串。按 `Marlin/src/gcode/host/M115.cpp` 的拼接方式，
+本固件长这样（版本号与时间随构建变化）：
+
+```text
+FIRMWARE_NAME:Marlin bugfix-2.1.x (Oct 21 2026 15:30:00)
+SOURCE_CODE_URL:github.com/MarlinFirmware/Marlin PROTOCOL_VERSION:1.0
+MACHINE_TYPE:3D Printer EXTRUDER_COUNT:0 AXIS_COUNT:5 UUID:00380031323351...
+```
+
+三个字段值得注意：
+
+- `MACHINE_TYPE:3D Printer` —— **这是正常的**。本固件没设 `CUSTOM_MACHINE_NAME`，
+  沿用了 Marlin 默认值；OpenPnP 认机器靠行尾的 `UUID`（STM32 芯片唯一 ID），不靠名字
+- `EXTRUDER_COUNT:0` —— 贴片机没有挤出机（`EXTRUDERS 0`），符合预期
+- `AXIS_COUNT:5` —— X/Y/Z + I/J 两个旋转轴（G 代码里写作 A/B）
+
+`M119` 会列出三个限位开关，手按限位时对应状态应翻转。
+
+`G28` 后机器先归位、再把 Z 抬到 `Z_AFTER_HOMING`（21 mm，见
+`Configuration.h:1929`）——**第一次跑 G28 请把手放在电源开关上**，某个轴若反向
+撞向机械限位就立刻断电：那是 `INVERT_X_DIR`（`Configuration.h:1888`，
+X 为 `true`，Y/Z 为 `false`）配反了。
+
+**完全没有回显？** 按顺序排查：
+
+1. 串口选错了 —— 选新出现的那个（Windows 是 `COMx`，Linux 是 `/dev/ttyACM0`），
+   不是蓝牙或别的虚拟串口；
+2. 波特率不是 `250000`；
+3. USB 线只供电不传数据 —— 换一根；
+4. 固件其实没烧进去 —— 重做第 4 步，看是否真的出现 `File downloaded successfully`。
 
 一切正常后，就可以在 OpenPnP 里把机器接入了。
 
@@ -952,6 +1087,33 @@ pio run -e Opulo_Lumen_REV5 -t upload
 ---
 
 ## 🛠 常见问题
+
+<details>
+<summary><b><code>pio run</code> 编译失败，或一直卡在 Downloading？</b></summary>
+
+分三种情况：
+
+**① 卡在 `Downloading` 很久** —— 正在下载工具链和依赖库，首次要几百 MB。
+国内网络可能很慢，可以给 PlatformIO 换个镜像或挂代理再试；**别中途 Ctrl+C**，
+中断后可能留下半截包，再编译会报奇怪的错（此时删掉 `~/.platformio/packages`
+下对应的包重跑即可）。
+
+**② 报 `Error: ...` 且提到某个库** —— 依赖没下全，执行一次
+`pio pkg update` 再重编。
+
+**③ 报错提到 `Configuration.h` 或 `schema`** —— 是配置改坏了（比如把
+`:[...]` 选项列表拆成了多行、把 `// @section` 翻译了）。先跑：
+
+```bash
+python buildroot/scripts/check-config-i18n.py
+```
+
+看它指出哪一项不对，再用 `git diff Marlin/Configuration.h` 对照改回来。
+
+> 环境本身装坏了的终极办法：删掉项目里的 `.pio/` 目录重编（会重新下载依赖，
+> 但不影响源码）。Windows 上如果因为 `pio run` 批量删除卡住，可在命令行加 `-v`
+> 以 verbose 模式运行。
+</details>
 
 <details>
 <summary><b>烧录后没有串口？</b></summary>

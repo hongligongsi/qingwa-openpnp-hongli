@@ -26,6 +26,7 @@
 - [✨ Features](#-features)
 - [🧱 Hardware & Pinout](#-hardware--pinout)
 - [🏗 Repository Layout](#-repository-layout)
+- [🧑‍🏫 Read this first: 5 words + 3 things to prepare](#-read-this-first-5-words--3-things-to-prepare)
 - [🚀 Quick Start](#-quick-start)
 - [⚙️ Building & Flashing](#-building--flashing)
 - [🔧 Configuration & Versioning](#-configuration--versioning)
@@ -382,10 +383,81 @@ qingwa-pnp-marlin/
 
 ---
 
+## 🧑‍🏫 Read this first: 5 words + 3 things to prepare
+
+If you have never flashed a microcontroller before, spend three minutes here —
+the rest of the guide will make far more sense. Already flashed boards before?
+Jump straight to "Quick Start".
+
+### Five words you need
+
+| Word | One-line meaning | What it means **here** |
+|------|------------------|------------------------|
+| **Firmware** | The program burned into the MCU; it runs on power-up | `firmware.bin`, about 120 KB |
+| **Motherboard / feeder** | Two different boards, each with its own STM32 | The motherboard runs the head (X/Y/Z); a feeder runs tape advance |
+| **Host** | The PC software that drives the machine | OpenPnP |
+| **G-code** | A plain-text way to send commands | `G1 X10 Y20 F3000` = move to (10, 20) |
+| **Build / compile** | Turn source into a flashable `firmware.bin` | One `pio run` command |
+
+Two more you will definitely meet:
+
+- **env (environment)** — a "recipe" for compiling the same source tree. This
+  repo has `Opulo_Lumen_REV5`, `REV4` and `REV3`. Picking the wrong env means
+  flashing board B's firmware onto board A, and it simply won't boot
+- **DFU** — the bootloader mode built into STM32 chips. The PC can only write
+  firmware while the board is in this mode
+
+### You only need three things
+
+| Category | What | Notes |
+|----------|------|-------|
+| **A board** | Motherboard (REV5), or a feeder controller (REV3 / REV4) | Motherboard only? Ignore feeders entirely |
+| **A USB cable** | One that **carries data** | ⚠️ Many cables are charge-only — this is the single most common trap |
+| **Software** | VS Code + the PlatformIO IDE extension | Installed once; it fetches the compiler and libraries itself |
+
+**Things you do *not* need to install** (many tutorials tell you to, but skip them):
+
+- ❌ No separate `arm-none-eabi-gcc` — PlatformIO downloads a matching version
+- ❌ No Python setup — the extension brings its own
+- ❌ No git — you can also click **Code → Download ZIP** on the repository page
+
+> **Windows users** may want [Zadig](https://zadig.akeo.ie/) on hand, but only
+> for the "DFU device not recognised" case (see Step 3).
+
+### Which path are you on?
+
+| Your goal | Read | Build environment needed? |
+|-----------|------|---------------------------|
+| Just get the machine running | Quick Start → Building & Flashing | ✅ Yes |
+| Only tune speed / current / light | Tuning quick reference (first three parts, all in OpenPnP) | ❌ No |
+| Change firmware parameters (ceilings, microsteps, travel) | Tuning quick reference → part 4, editing the firmware | ✅ Yes |
+| Change code, add features | Repository Layout → `Marlin/src/` | ✅ Yes |
+
+> Beginners: take the first path. **Do not start editing configs before the board
+> connects and homes successfully** — otherwise you cannot tell a bad parameter
+> from a bad wire.
+
+### The only three files you are likely to touch
+
+| File | What you change | Afterwards |
+|------|-----------------|------------|
+| `Marlin/Configuration.h` | Travel limits, speed ceilings, direction inversion, LED strip, buzzer | Rebuild + flash |
+| `Marlin/Configuration_adv.h` | TMC2209 current and microsteps, homing strategy, startup tune, serial buffer | Rebuild + flash |
+| `ini/stm32f4.ini` | Build target and upload method (rarely touched) | Rebuild |
+
+Everything else **you can ignore**: `Marlin/src/` is stock Marlin source (motion
+planning, G-code parsing, STM32 HAL) and this repo has not changed a line of it;
+`Marlin/rev5-config/` and `Marlin/rev*-feeder-config/` are configuration archives
+that never take part in a build. Details in "Repository Layout".
+
+---
+
 ## 🚀 Quick Start
 
-Getting a motherboard up and running takes 5 steps (about 15 minutes, excluding
-the first full build):
+Getting a motherboard up and running takes 5 steps — about 15 minutes once you
+know the flow, but budget half an hour for the very first build, which downloads
+the toolchain. Every step below states how to tell it worked and what to do if it
+did not.
 
 ### Step 1: Install the build environment
 
@@ -399,6 +471,14 @@ the first full build):
    cd qingwa-openpnp-hongli
    ```
 
+**Confirm the install worked**: run `pio --version` — a version number means you
+are set. In VS Code, the PlatformIO (ant) icon appearing in the activity bar is
+the equivalent.
+
+> No git? Click **Code → Download ZIP** on the repository page. The extracted
+> folder is identical, and every command below works the same — just open a
+> terminal inside it.
+
 ### Step 2: Build the motherboard firmware
 
 Nothing to change — the default config is the REV5 motherboard:
@@ -408,9 +488,22 @@ pio run
 ```
 
 The first build downloads library dependencies and compiles everything (a few
-minutes); later builds are incremental. Success shows `SUCCESS` plus flash/RAM
-stats (Flash ≈ 22%, RAM ≈ 7%); artifacts land in
-`.pio/build/Opulo_Lumen_REV5/firmware.bin` (and `.elf`).
+minutes); later builds are incremental.
+
+**How to tell it worked**: the last lines show `SUCCESS` plus size statistics:
+
+```text
+RAM:   [==        ]  6.8% (used 13720 bytes from 202752 bytes)
+Flash: [===       ] 22.7% (used 119700 bytes from 524288 bytes)
+SUCCESS
+```
+
+Artifacts land in `.pio/build/Opulo_Lumen_REV5/firmware.bin` (and `.elf`).
+
+> ⏳ The first build downloads the whole toolchain — **sitting at `Downloading`
+> for five to ten minutes is normal**, so do not hit Ctrl+C. Later rebuilds take
+> seconds. If it fails, read the last `Error` line; the FAQ has an entry for
+> failed `pio run` builds.
 
 ### Step 3: Put the board into bootloader mode
 
@@ -421,6 +514,16 @@ The STM32 ships with a built-in **DFU bootloader** (USB ID `0483:df11`):
 3. Plug in USB — the device should appear as `STM32 BOOTLOADER` in Device
    Manager (Windows) or `lsusb` (Linux).
 
+**If Windows does not recognise it** (a `STM32 BOOTLOADER` entry with a yellow
+warning triangle, or no new device at all):
+
+1. Open [Zadig](https://zadig.akeo.ie/) → menu **Options → List All Devices**;
+2. Pick `STM32 BOOTLOADER` in the dropdown (if it is missing, the board never
+   entered DFU — redo the three steps above);
+3. Set the target driver to **WinUSB** → click **Replace Driver** and wait.
+
+This is a one-time fix; later flashes need nothing extra.
+
 > If the board already runs this firmware, `pio run -t upload` usually works
 > directly — PlatformIO detects the DFU device automatically.
 
@@ -430,7 +533,18 @@ The STM32 ships with a built-in **DFU bootloader** (USB ID `0483:df11`):
 pio run -e Opulo_Lumen_REV5 -t upload
 ```
 
-`File downloaded successfully` means done; power-cycle USB and the firmware runs.
+`File downloaded successfully` means done; power-cycle USB and the firmware runs
+(the buzzer plays a short startup tune and the LED strip cycles red/green/blue —
+both are normal self-tests).
+
+**If it gets stuck:**
+
+| Message | Cause | Fix |
+|---------|-------|-----|
+| `No DFU capable USB device available` | Not in DFU mode | Redo Step 3; the order is "hold BOOT0 → tap RESET → release BOOT0" |
+| Permission error (Linux), DFU device present | Missing udev rule | Add a udev rule, or run once with `sudo` |
+| Flash aborts halfway | Unstable cable or port | Try another cable and a rear-panel port; avoid USB hubs |
+| DFU never appears | Bootloader damaged | Use an **ST-Link** over SWD (see "Building & Flashing → upload methods") |
 
 ### Step 5: Verify
 
@@ -444,6 +558,40 @@ M115            ; reports firmware version and machine name (LumenPnP)
 M119            ; endstop states
 G28             ; home all axes (verify endstop wiring first!)
 ```
+
+`M115` answers with one capability line. Built the way
+`Marlin/src/gcode/host/M115.cpp` assembles it, this firmware reports something
+like (version and timestamp vary per build):
+
+```text
+FIRMWARE_NAME:Marlin bugfix-2.1.x (Oct 21 2026 15:30:00)
+SOURCE_CODE_URL:github.com/MarlinFirmware/Marlin PROTOCOL_VERSION:1.0
+MACHINE_TYPE:3D Printer EXTRUDER_COUNT:0 AXIS_COUNT:5 UUID:00380031323351...
+```
+
+Three fields are worth understanding:
+
+- `MACHINE_TYPE:3D Printer` — **this is expected**. The firmware never sets
+  `CUSTOM_MACHINE_NAME`, so Marlin's default stays; OpenPnP identifies the
+  machine by the trailing `UUID` (the STM32 chip's unique ID), not by its name
+- `EXTRUDER_COUNT:0` — a PnP machine has no extruder (`EXTRUDERS 0`), as designed
+- `AXIS_COUNT:5` — X/Y/Z plus the I/J rotary axes (addressed as A/B in G-code)
+
+`M119` lists the three endstops; pressing each one should flip its state.
+
+After `G28` the machine homes and then lifts Z to `Z_AFTER_HOMING` (21 mm, see
+`Configuration.h:1929`) — **keep a hand on the power switch the first time you run
+`G28`**; if an axis drives into a hard stop, cut power immediately: the matching
+`INVERT_X_DIR` (`Configuration.h:1888`, `true` for X, `false` for Y/Z) is wrong.
+
+**Nothing comes back at all?** Check in this order:
+
+1. Wrong serial port — pick the newly appeared one (Windows `COMx`, Linux
+   `/dev/ttyACM0`), not a Bluetooth or virtual port;
+2. Baud rate is not `250000`;
+3. The USB cable is charge-only — swap it;
+4. The firmware never actually flashed — redo Step 4 and confirm
+   `File downloaded successfully` really appeared.
 
 Once verified, connect the machine in OpenPnP.
 
@@ -962,6 +1110,36 @@ To build without flashing: `pio run -e Opulo_Lumen_REV5`. The artefact lands in
 ---
 
 ## 🛠 FAQ
+
+<details>
+<summary><b><code>pio run</code> fails, or hangs at "Downloading"?</b></summary>
+
+Three cases:
+
+**① Stuck at `Downloading` for a long time** — the toolchain and libraries are
+being fetched; the first run pulls several hundred MB. A slow network makes this
+worse, so use a mirror or proxy if needed. **Do not hit Ctrl+C**: an interrupted
+download leaves half a package behind and the next build fails strangely. Delete
+the matching folder under `~/.platformio/packages` and retry.
+
+**② An `Error` mentioning a library** — dependencies are incomplete; run
+`pio pkg update` once and rebuild.
+
+**③ An error mentioning `Configuration.h` or `schema`** — the configuration was
+broken (for example, a `:[...]` option list split across lines, or a `// @section`
+line translated). Run:
+
+```bash
+python buildroot/scripts/check-config-i18n.py
+```
+
+It names the offending entry; use `git diff Marlin/Configuration.h` to compare
+and restore.
+
+> The nuclear option for a corrupted environment: delete the project's `.pio/`
+> folder and rebuild (dependencies are re-downloaded; your source is untouched).
+> On Windows, if `pio run` stalls on bulk deletion, add `-v` to run in verbose mode.
+</details>
 
 <details>
 <summary><b>No serial port after flashing?</b></summary>
