@@ -439,11 +439,10 @@
 
   <div class="preset-bar">
     <span class="preset-label">预设:</span>
+    <button onclick="loadPreset('firmware')">固件当前开机音 (C5-E5-G5-C6)</button>
+    <button onclick="loadPreset('morse')">旧版开机音 (摩斯)</button>
     <button onclick="loadPreset('beep')">简单蜂鸣</button>
-    <button onclick="loadPreset('morse')">摩斯节奏</button>
     <button onclick="loadPreset('do-mi-sol')">Do-Mi-Sol</button>
-    <button onclick="loadPreset('startup')">开机旋律</button>
-    <button onclick="loadPreset('marlin')">Marlin 开机</button>
     <button onclick="clearAll()">清空</button>
   </div>
 
@@ -509,7 +508,7 @@
       <button class="btn-normal" onclick="importGcode()">⬆ 从下方导入</button>
     </div>
     <textarea id="gcodeInput"
-      placeholder="在此粘贴 M300 G-code 后点「从下方导入」&#10;例如: M300 S2000 P100\nG4 P900\nM300 S2500 P1000"
+      placeholder="在此粘贴 M300 G-code 后点「从下方导入」&#10;例如固件当前开机音: M300 S523 P140\nG4 P90\nM300 S659 P140\nG4 P90\nM300 S784 P140\nG4 P90\nM300 S1046 P420"
       style="margin-top:10px;"></textarea>
   </div>
 
@@ -715,9 +714,16 @@
       renderTable();
     }
 
-    // 预设旋律
+    // 预设旋律（与 Marlin/Configuration_adv.h 的 STARTUP_COMMANDS 对照维护）
     const presets = {
-      'beep': [{ freq: 2000, dur: 200 }],
+      // 固件当前开机音（Configuration_adv.h L3858，C5-E5-G5-C6 琶音）
+      'firmware': [
+        { freq: 523, dur: 140 }, { freq: 0, dur: 90 },
+        { freq: 659, dur: 140 }, { freq: 0, dur: 90 },
+        { freq: 784, dur: 140 }, { freq: 0, dur: 90 },
+        { freq: 1046, dur: 420 }
+      ],
+      // 旧版开机音（Configuration_adv.h L3856 已注释，摩斯节奏）
       'morse': [
         { freq: 2000, dur: 100 }, { freq: 0, dur: 900 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 900 },
         { freq: 2000, dur: 100 }, { freq: 0, dur: 900 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 400 },
@@ -726,19 +732,8 @@
         { freq: 2000, dur: 100 }, { freq: 0, dur: 150 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 150 },
         { freq: 2000, dur: 100 }, { freq: 2500, dur: 1000 }
       ],
-      'do-mi-sol': [{ freq: 523, dur: 150 }, { freq: 659, dur: 150 }, { freq: 784, dur: 300 }],
-      'startup': [
-        { freq: 2000, dur: 100 }, { freq: 0, dur: 900 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 900 },
-        { freq: 2000, dur: 100 }, { freq: 0, dur: 900 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 900 },
-        { freq: 2000, dur: 100 }, { freq: 0, dur: 400 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 400 },
-        { freq: 2000, dur: 100 }, { freq: 0, dur: 400 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 400 },
-        { freq: 2000, dur: 100 }, { freq: 0, dur: 150 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 150 },
-        { freq: 2000, dur: 100 }, { freq: 0, dur: 150 }, { freq: 2000, dur: 100 }, { freq: 0, dur: 150 },
-        { freq: 2000, dur: 2500 }
-      ],
-      'marlin': [
-        { freq: 523, dur: 150 }, { freq: 659, dur: 150 }, { freq: 784, dur: 150 }, { freq: 1046, dur: 300 }
-      ]
+      'beep': [{ freq: 2000, dur: 200 }],
+      'do-mi-sol': [{ freq: 523, dur: 150 }, { freq: 659, dur: 150 }, { freq: 784, dur: 300 }]
     };
 
     function loadPreset(name) {
@@ -746,8 +741,8 @@
       renderTable();
     }
 
-    // 默认加载开机旋律
-    loadPreset('startup');
+    // 默认加载固件当前开机音
+    loadPreset('firmware');
 
     // ========== 自定义波形编辑器 ==========
     let customPeriodicWave = null;   // 当前生效的 PeriodicWave
