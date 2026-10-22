@@ -170,8 +170,8 @@ How to choose among the four feeder configs:
 | Schematic | `docs/hardware/SCH_插板_主板电路图.pdf` (JLCEDA V1.0, 2026-07-20) |
 | Gerber / drill | `docs/hardware/Gerber_主板_2026-10-21.zip` (16 files, fab-ready) |
 | Pin verification | ✅ checked pin by pin against the schematic — all match (details in `docs/hardware/主板电路图核对.md`) |
-| Board name (M115) | `LumenPnP Motherboard REV05` |
-| Machine name | `LumenPnP` |
+| Compile-time board name | `LumenPnP Motherboard REV05` (`BOARD_INFO_NAME`, build label only — not printed by M115) |
+| M115 `MACHINE_TYPE` | `3D Printer` (no `CUSTOM_MACHINE_NAME` set; OpenPnP identifies the board by the trailing `UUID`) |
 | MCU | STM32F407VET6 (ARM Cortex-M4 @ 168 MHz) |
 | Flash / SRAM | 512 KB / 192 KB |
 | Driver interface | 6 × TMC2209 (single-wire UART) |
@@ -227,7 +227,7 @@ uses the physical switches. Enabling it requires turning that macro on and tunin
 | Output 2 (`M106 P1`) | MOS-2 → CN23 | `PB9` | active, 24V low-side switch |
 | Output 3 (`M106 P2`) | MOS-3 → CN22 | `PE5` | active, 24V low-side switch |
 | Output 4 (`M106 P3`) | MOS-4 → CN21 | `PE6` | active, 24V low-side switch |
-| Auxiliary fan (controller fan) | FAN | `PE2` | active, spins while any motor is enabled, off 120 s after idle |
+| Auxiliary fan (controller fan) | FAN → CN20 | `PE2` | active, spins while any motor is enabled, off 120 s after idle |
 | Buzzer | BUZZER | `PA7` | active (`SPEAKER`) |
 | Bottom ring light | BTM-LIGHT | `PC7` | active, 18 LEDs, `NEO_GRB` |
 | Top ring light | TOP-LIGHT | `PC8` | active, 18 LEDs; address it separately with `M150 S1 ...` |
@@ -270,7 +270,7 @@ own if you want them:
 | Smart feeder bus | MAX3078 RS485 transceiver | `PA9`(DI) / `PA10`(RO) / `PD11`(DE) / `PD12`(RE) |
 | Vacuum pressure sensing | 2 × XGZP6857D | I²C through a PCA9545A 4-channel mux (`PB6`/`PB7`), one per nozzle |
 | Nozzle head detect | net `CHIMERA` | `PC1` (via jumper T9) |
-| Expansion headers | H6 / CN20 | `PA13`/`PA14` (`IO72`/`IO76`), `PA5`/`PA6`/`PA15`/`PC0` (AUX) |
+| Debug header H6 (2×5) | SWD + reset | 3V3, `REST`, `PA13`/`PA14` (`IO72`/`IO76`), other pins unpopulated |
 
 **⑦ Unassigned pins**
 
@@ -302,8 +302,9 @@ firmware but are free if you don't use SPI.)
 
 - **Interface**: USB CDC virtual serial (`SERIAL_PORT -1`); baud is nominal —
   align on `250000` for consistency;
-- **Identify**: send `M115` after connecting — it should report the machine
-  name `LumenPnP` and firmware version;
+- **Identify**: send `M115` after connecting — it should report the firmware
+  version, `AXIS_COUNT:5` and a trailing `UUID` (`MACHINE_TYPE` showing the Marlin
+  default `3D Printer` is normal — see the [FAQ](#-faq));
 - **Motion commands**: standard `G0/G1` + `G28` homing + `M119` endstop query,
   fully compatible with the Marlin command set;
 - **Parameter storage**: ⚠️ `EEPROM_SETTINGS` is **not enabled** in this firmware, so
@@ -312,7 +313,9 @@ firmware but are free if you don't use SPI.)
 - Each feeder appears to the host as an **independent serial device** (each
   flashed with the feeder firmware).
 
-### REV05 AUX port (8-pin)
+### REV05 AUX port (8-pin, header U30 on the board)
+
+The physical U30 header (2×4) matches the firmware definition below **pin for pin**:
 
 ```
              _________
@@ -592,7 +595,7 @@ pio device monitor -b 250000
 ```
 
 ```gcode
-M115            ; reports firmware version and machine name (LumenPnP)
+M115            ; reports firmware version, axis count and chip UUID (MACHINE_TYPE shows 3D Printer — normal)
 M119            ; endstop states
 G28             ; home all axes (verify endstop wiring first!)
 ```
@@ -917,7 +920,7 @@ in `Configuration.h` and rebuild (the board already provides SRAM emulation and
 ### 7. A typical bring-up sequence
 
 ```gcode
-M115                    ; 1. confirm you are talking to a LumenPnP
+M115                    ; 1. confirm firmware version and UUID (link check)
 M119                    ; 2. push each axis onto its endstop and watch the state flip
 G28                     ; 3. home
 G92 X0 Y0 Z0 A0 B0      ; 4. declare this the origin (optional after G28)
@@ -1190,8 +1193,9 @@ first use (Windows). A new serial device should appear in Device Manager /
 <details>
 <summary><b>How do I check the running firmware version/config?</b></summary>
 
-Send `M115` from your host — the response includes the version string and the
-machine name (LumenPnP).
+Send `M115` from your host — the response includes the version string,
+`AXIS_COUNT:5` and the chip UUID (`MACHINE_TYPE` is Marlin's default
+`3D Printer`, which is expected).
 </details>
 
 <details>
