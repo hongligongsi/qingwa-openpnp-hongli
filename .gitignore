@@ -168,3 +168,8 @@ tags
 .openpnp2/log/
 .openpnp2/backups/
 .openpnp2/snapshots/
+
+# OpenPnP 绿色版发行包（含内置 Java 运行时，约 320 MB）
+# 体积过大且为第三方二进制产物，不入库；需要时从发行页面重新获取
+lfpnp_v1.0/
+
