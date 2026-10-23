@@ -400,7 +400,7 @@ qingwa-pnp-marlin/
 │   │   └── scripts/            #   configuration.py 等构建脚本
 │   ├── scripts/                #   ⭐ 配置校验工具（改完 Configuration*.h 必跑）
 │   │   ├── check-config-i18n.py          # 注释结构 + schema（2444 项基线）比对
-│   │   ├── check-config-code-intact.py   # ARM 预处理输出比对，证明功能等价
+│   │   ├── check-config-code-intact.py   # 宏定义表 + ARM 预处理双重比对，证明功能等价
 │   │   ├── config-schema-baseline.json   # schema 基线快照
 │   │   └── README-config-i18n.md         # 两个脚本的用法说明
 │   ├── share/vscode/auto_build.py                #   Auto Build（PIO Build）
@@ -1092,7 +1092,7 @@ cp Marlin/Configuration.h Marlin/Configuration_adv.h Marlin/rev5-config/
 # 2. 校验注释结构与 schema（基线 2444 项）
 python buildroot/scripts/check-config-i18n.py
 
-# 3. 确认没改坏代码（可选，只在怀疑动了代码行时跑）
+# 3. 确认没改坏代码：宏定义表 + 预处理输出双重比对（动过代码行就跑一次）
 python buildroot/scripts/check-config-code-intact.py --ref HEAD
 
 # 4. 编译并烧录（默认 DFU）

@@ -388,7 +388,7 @@ qingwa-pnp-marlin/
 │   │   └── scripts/            #   configuration.py build scripts
 │   ├── scripts/                #   ⭐ Config checkers (run after editing Configuration*.h)
 │   │   ├── check-config-i18n.py          # comment structure + schema (2444-item baseline)
-│   │   ├── check-config-code-intact.py   # ARM preprocessor diff, proves behaviour equality
+│   │   ├── check-config-code-intact.py   # macro table + ARM preprocessor diff, proves behaviour equality
 │   │   ├── config-schema-baseline.json   # schema baseline snapshot
 │   │   └── README-config-i18n.md         # usage notes for both scripts
 │   ├── share/vscode/auto_build.py                #   Auto Build (PIO Build)
@@ -1113,7 +1113,7 @@ cp Marlin/Configuration.h Marlin/Configuration_adv.h Marlin/rev5-config/
 # 2. Validate comment structure and schema (2444-item baseline)
 python buildroot/scripts/check-config-i18n.py
 
-# 3. Confirm no code was broken (optional; run if you touched code lines)
+# 3. Confirm no code was broken: macro-definition table + preprocessor diff
 python buildroot/scripts/check-config-code-intact.py --ref HEAD
 
 # 4. Build and flash (DFU by default)
