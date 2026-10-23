@@ -33,6 +33,7 @@
 - [🧰 Common G-code](#-common-g-code)
 - [🎛 Tuning quick reference: speed / current / light](#-tuning-quick-reference-speed--current--light)
 - [🛠 FAQ](#-faq)
+- [📚 Further reading & calibration notes](#-further-reading--calibration-notes)
 - [🤝 Credits & License](#-credits--license)
 
 ---
@@ -1355,6 +1356,40 @@ nothing more.
 
 Full tutorial with screenshots: [m300_editor/README.md](m300_editor/README.md).
 </details>
+
+---
+
+## 📚 Further reading & calibration notes
+
+This repo covers the firmware side; for **frame assembly, OpenPnP setup and
+machine calibration** follow the upstream and community docs. Links below are
+collected from the original author's "Frog" replication guide:
+
+| Resource | Link | Notes |
+|----------|------|-------|
+| Opulo quick start | <https://ohai.opulo.io/> | official getting started |
+| Opulo full docs | <https://docs.opulo.io/> | assembly, calibration, usage (authoritative) |
+| LumenPnP repository | <https://github.com/opulo-inc/lumenpnp/> | hardware files + firmware source |
+| Ruizao Tech Yuque (zh) | <https://www.yuque.com/lonlypan/td6smc/rgvt49zsg6t72n9u> | Chinese community translation |
+| Ruizao Tech Feishu (zh) | <https://tcnyw794ws3e.feishu.cn/wiki/LVXow8r6MiKV5KkbJgZcMZUrnPg> | same content, minor differences |
+| Zi Jin's tutorial (zh) | <https://www.zbkcn.top/docs/docs4_lumenpnp/01LumenPnP/> | Chinese community guide |
+
+### Three calibration rules (from the original author — make or break)
+
+1. **Zero everything before calibrating**: clear all compensation data (backlash
+   compensation, nozzle concentricity) and disable those options plus reference
+   point re-homing. Otherwise new calibration stacks on old compensation and
+   drifts further with every pass.
+2. **Approach every mark from one direction only**: every axis has backlash
+   (some more than others). A position approached left-to-right differs from
+   one approached right-to-left — always come at the target from the same side.
+3. **Vision pipeline and position calibration are independent**: if ambient
+   light changes force you to redo exposure, only the vision pipeline changes.
+   Previously calibrated mechanical positions remain valid — no need to redo them.
+
+> ⚠️ Tip: in OpenPnP prefer editing the values directly in Machine Setup over
+> the "Issues & Solutions" wizard — they are equivalent, but direct edits make
+> it clear what changed and are easier to roll back.
 
 ---
 
