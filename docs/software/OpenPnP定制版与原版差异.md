@@ -49,6 +49,54 @@
 | **新飞达类型** | `As2Feeder`（AS2 自动飞达）、`FoolproofFeeder`（**蝌蚪飞达**）+ 各自向导 + `FeederNames` 注册 | 扩展支持第三方送料器 |
 | **FlyCapture 驱动保留** | `ReferenceFlyCapture` + 向导 | 原版主线已删除的老式 FireWire 相机驱动，此版本保留（说明基线为较早的原版快照） |
 
+### 2.1 同拍功能配置项与算法细节
+
+**配置项**（machine.xml `simultaneousVision` 节点）：
+
+| 项 | 默认值 | 含义 |
+|----|--------|------|
+| `settleMode` | `FixedDelay` | 拍照稳定方式三档：`FixedDelay` 固定延时 / `PerCamera` 按相机 / `Code` 指令确认 |
+| `settleDelayMs` | 250 ms | 固定延时模式的等待时间 |
+| `captureTimeoutMs` | 3000 ms | 并行拍照超时 |
+| `maxPositionError` | 0.5 mm | 组员几何容差（超出者不并入同组） |
+| `fixedVisionHeight` | 0 mm | 强制统一拍照高度 |
+| `fallbackToSequential` | true | 同拍失败自动回退逐件对准 |
+| `mappings` | 空 | `NozzleCameraMapping`：吸嘴名 ↔ 相机名映射列表 |
+
+**入组条件**（`selectGroup`，全部满足才并入同拍组）：
+吸嘴已吸当前元件 · 与组内同 Head · 非旋转对齐模式 · 已装吸嘴尖 · 元件高度已知 ·
+底视全局及该元件均已启用 · PreRotate 条件满足 · **该元件映射的相机未被组内占用**（一个相机一拍一个元件）。
+
+### 2.2 AS2 自动飞达协议（即插即用）
+
+- 走 GcodeDriver 串口发指令 **`M600 N<飞达编号> F<进给格数>`**（feedCount 默认 4）
+- 首次使用时**自动创建**名为 `AS2` 的 GcodeDriver + ReferenceActuator
+  （`ACTUATE_STRING_COMMAND = {StringValue}`），零手工配置
+- 可选 `moveBeforeFeed`：先移动吸嘴到拾取位再触发送料
+
+### 2.3 蝌蚪飞达（FoolproofFeeder）
+
+`feed()` 为**空操作**——零动作手动/外部送料型飞达，只提供拾取位置管理与防误触发，
+适合料盘、托盘等不需要机器送料的场景。
+
+### 2.4 底视识别模式（原版无此 UI）
+
+`BottomVisionSettingsConfigurationWizard` 新增 `RecognitionMode` 六档选择：
+**STANDARD / LENGTH_WIDTH（长宽）/ POLARITY（极性）/ LARGE（大元件）/ NONE / CUSTOM（自定义）**。
+
+### 2.5 「问题 & 解决方案」汉化引擎（`IssueText`，全新类）
+
+原版该面板大量文案是运行时拼接的英文，无法用 properties 资源翻译。定制版的方案：
+
+- 内置 **11 个词典文件**（`issues_zh_CN/` 下 axis / gcode / calibration / camera / head /
+  kinematic / nozzletip / actuator / vision / scripting / misc，共 **225 条规则**）
+- 每行格式「英文原文 ⇥ 中文译文」；以 `~` 开头的行是**正则规则**，支持 `$1` 反向引用，
+  如 `~^Calibrate backlash compensation for axis (.+)\.$` → `为轴 $1 标定齿隙补偿`
+- 仅当系统语言为中文时激活，先查精确映射、再用正则兜底，未命中文本原样返回
+
+此外 `CalibrationSolutions` 本身也有**实质逻辑改动**（非纯翻译）：新增「Speed factor control」
+标定速度调节、校准运动模式流程调整等。
+
 ---
 
 ## 三、汉化（57 个原有类被修改）
