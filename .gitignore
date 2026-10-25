@@ -179,3 +179,6 @@ lfpnp_v1.0/
 
 # 发行包 zip（已上传 GitHub Release lfpnp-v1.0，本地可删）
 lfpnp_v1.0-openpnp-bundle.zip
+
+# 交互式 BOM（24MB，含 3D 渲染；需要分发时传 Release）
+docs/hardware/InteractiveBOM_插板_2026-10-22.html
