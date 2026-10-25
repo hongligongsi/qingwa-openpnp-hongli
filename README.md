@@ -201,7 +201,8 @@
 | ✔ 引脚核对记录 | [`主板电路图核对.md`](docs/hardware/主板电路图核对.md) | 原理图与固件引脚头文件逐脚比对明细 |
 | 🧾 插板 BOM 物料清单 | [`插板BOM物料清单.md`](docs/hardware/插板BOM物料清单.md) | 43 行物料 + LCSC 编号，含 TMC2209 需单独加购等坑位提醒 |
 | 🖱 交互式 BOM | `InteractiveBOM_插板_2026-10-22.html` | 24 MB，本地浏览器打开，点位号高亮 PCB 位置（不入库，[从 Release 单独下载](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/InteractiveBOM_2026-10-22.html)） |
-| 📦 完整发行包 | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) | **OpenPnP 深度定制版**（绿色版 + 内置 Java 17 运行时，约 320 MB） |
+| 📦 完整发行包（Windows） | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) | **OpenPnP 深度定制版**（绿色版 + 内置 Java 17 运行时，约 320 MB） |
+| 📦 发行包（Linux x64） | [lfpnp_v1.0-openpnp-linux-x64.tar.gz](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/lfpnp_v1.0-openpnp-linux-x64.tar.gz) | 同一套定制程序，内置 Linux JRE 17（约 227 MB），`chmod +x OpenPnP/OpenPnP.sh` 后运行 |
 
 > 💡 发行包内的 OpenPnP **不是原版**，是基于 OpenPnP 深度修改的上位机：**全中文界面**、
 > 「问题 & 解决方案」面板中文翻译、飞达类型中文名、拼板阵列即时刷新、单板文件浏览修复、

@@ -182,3 +182,4 @@ lfpnp_v1.0-openpnp-bundle.zip
 
 # 交互式 BOM（24MB，含 3D 渲染；需要分发时传 Release）
 docs/hardware/InteractiveBOM_插板_2026-10-22.html
+lfpnp_v1.0-openpnp-linux-x64.tar.gz
