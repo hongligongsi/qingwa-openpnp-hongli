@@ -193,9 +193,11 @@ How to choose among the four feeder configs:
 > customized host software: **fully localized Chinese UI**, translated
 > "Issues & Solutions" panel, Chinese feeder type names, real-time panel-array
 > refresh, board file browser fix, paste-list import, repeat-placement,
-> post-job / fault G-code hooks, and a **simultaneous dual-nozzle (parallel
-> down-vision)** feature. It stores its config in a separate `.lfpnp` directory
-> (coexists with stock OpenPnP's `.openpnp2` on the same machine).
+> post-job / fault G-code hooks, a **simultaneous dual-nozzle (parallel
+> down-vision)** feature, a **one-click calibration** wizard (fiducials / camera
+> calibration / nozzle-tip vision / belt backlash in one pass), and extra feeder
+> types (AS2 auto feeder, tadpole feeder). It stores its config in a separate
+> `.lfpnp` directory (coexists with stock OpenPnP's `.openpnp2` on the same machine).
 
 ### Complete pin map (from `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`)
 
