@@ -130,6 +130,23 @@
 - `SnapshotGallery` + `ThumbTile`：底部相机快照缩略图墙（1~16 分格、240 帧历史）
 - `CardPanel`：卡片容器
 
+### 2.9 同拍在作业流程中的挂载点
+
+改在 `ReferencePnpJobProcessor` 的**对齐（align）环节**内挂载（`trySimultaneousAlign`）：
+
+1. 对齐器必须是 `ReferenceBottomVision` 且机器为 `ReferenceMachine`、同拍配置已启用
+2. 从剩余待对齐元件（Processing 状态）中选同拍组；**组不足 2 个 → 直接放弃，走原版单件对齐**
+3. `alignGroup` 成功后把完成的元件记入 `simultaneousDone` 集合，状态栏提示
+   「Simultaneous align: N nozzles captured in one shot.」
+4. 同拍整体异常只 `Logger.warn`，**自动落回**原版逐件对齐循环（含视觉重试），作业不中断
+
+### 2.10 「单板文件浏览修复」的具体内容
+
+原版 `viewerAction` 每次点开都新建一个 `PlacementsHolderLocationViewerDialog`，
+反复开关会堆积多个窗口。定制版改为**单实例复用**：
+窗口已存在则只更新数据并 `setExtendedState(0)` 恢复正常大小；窗口关闭时把
+`jobViewer` 引用置空，下次重新创建。
+
 ---
 
 ## 三、汉化（57 个原有类被修改）
