@@ -97,6 +97,39 @@
 此外 `CalibrationSolutions` 本身也有**实质逻辑改动**（非纯翻译）：新增「Speed factor control」
 标定速度调节、校准运动模式流程调整等。
 
+### 2.6 一键校正调用链（实现细节）
+
+| 步骤 | 前置检查 | 调用 |
+|------|----------|------|
+| ① 主基准点+相机标定 | 主基准点位置已设置 | 移相机至基准点 → `VisionSolutions.autoCalibrateCamera`（自动标定）→ `centerInOnSubjectLocation`（居中）→ 回写基准点位置与直径 |
+| ② 副基准点+三维标定 | 副基准点位置已设置 | 同上，但启用 3D 模式（相机高度标定） |
+| ③ 吸嘴尖视觉校准 | 吸嘴尖已装载且启用视觉校准 | 逐嘴尖跑视觉校准，未装载自动跳过 |
+| ④ 相机→吸嘴精确偏移 | 主基准点已设置、有可校准吸嘴 | 走 `CalibrationSolutions` 精确偏移流程 |
+| ⑤ 皮带间隙校正 | 主基准点就绪 + 轴启用软限位 | 仅处理 X/Y 控制器轴且默认挂载件为**朝下相机**的轴 → `CalibrationSolutions.calibrateAxisBacklash` |
+
+每步独立捕获异常，结果分「成功 / 跳过 / 失败」三色汇总展示，任一步失败不中断后续步骤。
+
+### 2.7 重复贴片与作业状态指令（实现细节）
+
+**重复贴片**（`ReferencePnpJobProcessor.prepareRepeatLastPlacement`）：
+优先取本次作业**最后贴装的那个元件**（`lastPlacedJobPlacement`）；若没有，则扫描所有板
+找出**已标记贴装完成**的最后一个元件 → 重建只含该元件的作业队列 → 作为单件作业执行一遍。
+要求作业处于停止状态。
+
+**作业状态指令触发点**（`ReferencePnpJobProcessor.step()`）：
+- 作业正常完成 → `JOB_FINISHED_COMMAND`；任一步抛异常 → `JOB_ERROR_COMMAND`
+- `sendJobStateGcode` **广播给所有 GcodeDriver**（多个驱动都会收到）
+- 对青蛙贴片机：可在 Marlin 侧为这两条指令挂宏，实现贴完蜂鸣 / 报警灯带联动
+
+### 2.8 总览仪表盘实现方式
+
+图表全部为 **Graphics2D 手绘**（未引入 JFreeChart）：
+- `OverviewPanel$ChartPanel`：双折线（完成率 % + 平滑速度），速度做指数平滑
+  `smooth = 0.7×旧值 + 0.3×瞬时值`，每秒 `Timer` 推送一个采样点，120 点滚动窗口
+- 环形图：`fillOval` 双圆叠加绘制
+- `SnapshotGallery` + `ThumbTile`：底部相机快照缩略图墙（1~16 分格、240 帧历史）
+- `CardPanel`：卡片容器
+
 ---
 
 ## 三、汉化（57 个原有类被修改）
