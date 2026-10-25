@@ -200,7 +200,7 @@
 | 🔌 **接线指南** | [`接线指南.md`](docs/hardware/接线指南.md) | **全部座子针序逐脚核实**：电源 / 电机 / 限位 / MOS 泵阀 / 灯带 / RS485 / 扩展口，含上电检查六步 |
 | ✔ 引脚核对记录 | [`主板电路图核对.md`](docs/hardware/主板电路图核对.md) | 原理图与固件引脚头文件逐脚比对明细 |
 | 🧾 插板 BOM 物料清单 | [`插板BOM物料清单.md`](docs/hardware/插板BOM物料清单.md) | 43 行物料 + LCSC 编号，含 TMC2209 需单独加购等坑位提醒 |
-| 🖱 交互式 BOM | `InteractiveBOM_插板_2026-10-22.html` | 24 MB，本地浏览器打开，点位号高亮 PCB 位置（不入库，随 Release 提供） |
+| 🖱 交互式 BOM | `InteractiveBOM_插板_2026-10-22.html` | 24 MB，本地浏览器打开，点位号高亮 PCB 位置（不入库，[从 Release 单独下载](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/InteractiveBOM_2026-10-22.html)） |
 | 📦 完整发行包 | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) | OpenPnP 绿色版 + 硬件资料打包（约 320 MB） |
 
 ### 完整引脚表（来自 `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`）
