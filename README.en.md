@@ -177,6 +177,18 @@ How to choose among the four feeder configs:
 | Flash / SRAM | 512 KB / 192 KB |
 | Driver interface | 6 × TMC2209 (single-wire UART) |
 
+### 📁 Hardware documentation index (`docs/hardware/`)
+
+| Document | File | Notes |
+|----------|------|-------|
+| 📄 Schematic | `SCH_插板_主板电路图.pdf` | Exported from JLCEDA — the primary reference for wiring |
+| 🗂 Gerber files | `Gerber_主板_2026-10-21.zip` | 16 files, fab-ready |
+| 🔌 **Wiring guide (Chinese)** | [`接线指南.md`](docs/hardware/接线指南.md) | **Every connector pinout verified**: power / steppers / endstops / pump-valve MOSFETs / LED strips / RS485 / expansion, plus a 6-step power-on checklist |
+| ✔ Pin verification log | [`主板电路图核对.md`](docs/hardware/主板电路图核对.md) | Pin-by-pin comparison between schematic and firmware pin header |
+| 🧾 Carrier-board BOM | [`插板BOM物料清单.md`](docs/hardware/插板BOM物料清单.md) | 43 line items with LCSC part numbers; warns that TMC2209 must be ordered separately |
+| 🖱 Interactive BOM | `InteractiveBOM_插板_2026-10-22.html` | 24 MB — open locally in a browser; clicking a designator highlights the PCB location (not in repo, shipped with the Release) |
+| 📦 Full distribution bundle | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) | OpenPnP portable build + hardware docs (~320 MB) |
+
 ### Complete pin map (from `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`)
 
 > ✅ **Verified pin by pin against the physical board schematic**
