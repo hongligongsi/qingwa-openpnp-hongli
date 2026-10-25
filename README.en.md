@@ -187,7 +187,15 @@ How to choose among the four feeder configs:
 | ✔ Pin verification log | [`主板电路图核对.md`](docs/hardware/主板电路图核对.md) | Pin-by-pin comparison between schematic and firmware pin header |
 | 🧾 Carrier-board BOM | [`插板BOM物料清单.md`](docs/hardware/插板BOM物料清单.md) | 43 line items with LCSC part numbers; warns that TMC2209 must be ordered separately |
 | 🖱 Interactive BOM | `InteractiveBOM_插板_2026-10-22.html` | 24 MB — open locally in a browser; clicking a designator highlights the PCB location (not in repo; [download from Release](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/InteractiveBOM_2026-10-22.html)) |
-| 📦 Full distribution bundle | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) | OpenPnP portable build + hardware docs (~320 MB) |
+| 📦 Full distribution bundle | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) | **Deeply customized OpenPnP** (portable build with bundled Java 17 runtime, ~320 MB) |
+
+> 💡 The OpenPnP inside the bundle is **not the stock release** — it is a heavily
+> customized host software: **fully localized Chinese UI**, translated
+> "Issues & Solutions" panel, Chinese feeder type names, real-time panel-array
+> refresh, board file browser fix, paste-list import, repeat-placement,
+> post-job / fault G-code hooks, and a **simultaneous dual-nozzle (parallel
+> down-vision)** feature. It stores its config in a separate `.lfpnp` directory
+> (coexists with stock OpenPnP's `.openpnp2` on the same machine).
 
 ### Complete pin map (from `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`)
 
