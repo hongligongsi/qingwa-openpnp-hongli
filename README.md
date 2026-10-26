@@ -1,28 +1,27 @@
 <p align="center">
-  
-  <b>🐸 青蛙贴片机 固件 · qingwa-pnp-marlin</b>  
 
-  
-  基于 Marlin 2.1.x + Opulo LumenPnP REV5 主板的贴片机专用固件
-  
+<b>🐸 青蛙贴片机 固件 · qingwa-pnp-marlin</b>
+
+基于 Marlin 2.1.x + Opulo LumenPnP REV5 主板的贴片机专用固件
+
 </p>
 
 <p align="center">
-  
-  <a href="LICENSE"><img src="https://img.shields.io/badge/Code-GPL--3.0-blue.svg" alt="Code: GPL-3.0"></a>
-  
-  <a href="#-致谢与许可证"><img src="https://img.shields.io/badge/HW-CERN--OHL--W%202.0-green.svg" alt="Hardware: CERN-OHL-W 2.0"></a>
-  
-  <a href="#-致谢与许可证"><img src="https://img.shields.io/badge/Docs-CC%20BY--SA%204.0-blueviolet.svg" alt="Docs: CC BY-SA 4.0"></a>
-  
-  <img src="https://img.shields.io/badge/Marlin-2.1.x-important.svg" alt="Marlin 2.1.x">
-  
-  <img src="https://img.shields.io/badge/Board-LumenPnP%20REV5-success.svg" alt="LumenPnP REV5">
-  
-  <img src="https://img.shields.io/badge/MCU-STM32F407VET6-informational.svg" alt="STM32F407VET6">
-  
-  <img src="https://img.shields.io/badge/Build-PlatformIO-orange.svg" alt="PlatformIO">
-  
+
+<a href="LICENSE"><img src="https://img.shields.io/badge/Code-GPL--3.0-blue.svg" alt="Code: GPL-3.0"></a>
+
+<a href="#-致谢与许可证"><img src="https://img.shields.io/badge/HW-CERN--OHL--W%202.0-green.svg" alt="Hardware: CERN-OHL-W 2.0"></a>
+
+<a href="#-致谢与许可证"><img src="https://img.shields.io/badge/Docs-CC%20BY--SA%204.0-blueviolet.svg" alt="Docs: CC BY-SA 4.0"></a>
+
+![Marlin 2.1.x](https://img.shields.io/badge/Marlin-2.1.x-important.svg)
+
+![LumenPnP REV5](https://img.shields.io/badge/Board-LumenPnP%20REV5-success.svg)
+
+![STM32F407VET6](https://img.shields.io/badge/MCU-STM32F407VET6-informational.svg)
+
+![PlatformIO](https://img.shields.io/badge/Build-PlatformIO-orange.svg)
+
 </p>
 
 <p align="center"><strong>简体中文</strong> | <a href="README.en.md">English</a></p>
@@ -51,7 +50,7 @@
 ## 📖 项目简介
 
 本项目是 **「青蛙贴片机」专用固件**。它并非 3D 打印机固件，而是把一个通用开源固件
-  
+
 **Marlin** 改造为 **SMT 贴片机（Pick-and-Place）的运动控制器固件**。
 
 ### 这台机器由什么组成？
@@ -59,32 +58,32 @@
 一台完整的青蛙贴片机包含两大部分，**各自运行一套独立但同源的固件**：
 
 1. **主板（Motherboard）** —— 机器的"大脑 + 四肢"。
-     
+
    实物是**青蛙自绘插板**（MCU：STMicroelectronics **STM32F407VET6**，
-     
-   ARM Cortex-M4，512 KB Flash / 192 KB SRAM），引脚与 **Opulo LumenPnP
-     
-   Motherboard REV05 完全兼容**（已逐脚核对，见
-     
+
+   ARM Cortex-M4，512 KB Flash / 192 KB SRAM），引脚与 \*\*Opulo LumenPnP
+
+   Motherboard REV05 完全兼容\*\*（已逐脚核对，见
+
    [硬件与引脚](#-硬件与引脚)），所以固件直接用 REV5 的板级定义，
-     
+
    负责机头的 X/Y 定位、Z 轴升降、双电机同步（X/Y2）、限位检测、
-     
+
    相机/光源/真空等外设控制。它就是本仓库的**默认构建目标**。
 2. **飞达（Feeder，电动送料器）** —— 负责把元件编带按格推进到取料位。
-     
+
    每台飞达内部有一块 **Opulo 飞达主控板（REV3 或 REV4）**，同样运行 Marlin，
-     
+
    用旋转轴驱动拨爪轮完成送带动作。飞达固件用本仓库里的
-     
+
    `rev*-feeder-config` 配置快照构建（详见下文教程）。
 
 固件通过 USB 串口接收 G 代码 / 状态查询，可与 OpenPnP 等上位机软件配合完成
-  
+
 自动贴装流程。上位机把**主板和每台飞达视为独立的串口设备**分别下发指令。
 
 > 该仓库从上游 **Marlin 2.1.x** 与 **Opulo LumenPnP** 开源硬件/软件生态定制而来，
->   
+>
 > 保留了 Marlin 强大的运动规划与 HAL 分层结构，并加入了 Opulo 主板定义与多版本配置。
 
 ### 主板固件裁掉了什么？
@@ -104,9 +103,9 @@
 ## 🧩 系统架构：一套源码，两种固件
 
 本仓库**只维护一份 Marlin 源码**，主板固件和飞达固件都从它构建——
-  
+
 两者唯一的区别是编译时套用的**配置文件**（`Configuration.h` /
-  
+
 `Configuration_adv.h`）和**构建环境（env）**&#x4E0D;同：
 
 ```
@@ -141,7 +140,7 @@
 - `rev4-v3.0-feeder-config`：v3.0 硬件，送带速度较保守（200 mm/s）；
 - `rev4-v3.1-feeder-config`：v3.1 硬件，送带速度提升到 1000 mm/s；
 - `rev4-v3.1-feeder-pwm-aux-config`：同 v3.1，额外开启 `FAST_PWM_FAN`
-    
+
   （AUX 风扇 31.4 kHz 高频驱动，消除啸叫）；
 - `rev3-feeder-config`：REV3 主控旧款飞达（与 REV4 系列引脚/功能差异较大）。
 
@@ -150,11 +149,11 @@
 ## ✨ 功能特性
 
 - **六轴独立步进**：X / Y / Y2 / Z / I / J 各轴独立 STEP/DIR/EN 引脚与单线 TMC UART
-    
+
   回读（软串口 19200 baud），全轴 **TMC2209**。
 - **失速 / 堵转检测信号（DIAG）**：六轴 DIAG 引脚直接引出，可接入上位机做堵转判断。
 - **纯运动 / IO 控制器**：`EXTRUDERS 0`、全部温度传感器关闭，3D 打印热管理路径被裁掉，
-    
+
   中断与定时器资源优先保证运动控制。
 - **完善的板载外设定义**：
   - X / Y / Z 三路限位开关
@@ -163,14 +162,14 @@
   - 8 脚 **AUX** 扩展口：3×PWM + 1×模拟输入 + I²C（SCL/SDA）
   - **RS485** 收发使能脚（用于外部送料器 / 通讯板）
   - 4 个 ID 引脚（`PD0`–`PD3`），支持硬件版本识别
-- **参数存储**：板级预留 SRAM EEPROM 仿真（8 KB），但 `EEPROM_SETTINGS`
+- **参数存储**：板级预留 SRAM EEPROM 仿真（8 KB），但 `EEPROM_SETTINGS`  
   默认**未启用**，`M500` 不生效——详见「常用 G 代码 → 参数保存」。
 - **G 代码兼容**：完整保留 Marlin 的 G/M 命令体系与快速解析器。
 - **多硬件版本配置快照**：REV3 / REV4 + 各代送料器（v3.0 / v3.1 / PWM-AUX）配置保留，
-    
+
   便于对照、回归与硬件升级。
 - **继承 Marlin 2.1 生态**：HAL 分层（本仓库重点使用 STM32 HAL）、PlatformIO 一键构建、
-    
+
   官方 CI 工作流、Auto Build 脚本。
 
 ---
@@ -179,116 +178,119 @@
 
 ### 主板信息
 
-| 项            | 值                                      |
-| ------------ | -------------------------------------- |
-| 实物主板      | 青蛙插板（自绘板，与 LumenPnP REV5 **引脚兼容**） |
-| 原理图        | `docs/hardware/SCH_插板_主板电路图.pdf`（嘉立创EDA V1.0，2026-07-20） |
-| Gerber / 钻孔 | `docs/hardware/Gerber_主板_2026-10-21.zip`（16 个文件，可直接打样） |
-| 引脚核对      | ✅ 已与原理图逐脚核对，全部一致（明细见 `docs/hardware/主板电路图核对.md`） |
-| 固件编译期板名   | `LumenPnP Motherboard REV05`（`BOARD_INFO_NAME`，仅编译标识，M115 不输出） |
+| 项                   | 值                                                                       |
+| ------------------- | ----------------------------------------------------------------------- |
+| 实物主板                | 青蛙插板（自绘板，与 LumenPnP REV5 **引脚兼容**）                                      |
+| 原理图                 | `docs/hardware/SCH_插板_主板电路图.pdf`（嘉立创EDA V1.0，2026-07-20）                |
+| Gerber / 钻孔         | `docs/hardware/Gerber_主板_2026-10-21.zip`（16 个文件，可直接打样）                  |
+| 引脚核对                | ✅ 已与原理图逐脚核对，全部一致（明细见 `docs/hardware/主板电路图核对.md`）                        |
+| 固件编译期板名             | `LumenPnP Motherboard REV05`（`BOARD_INFO_NAME`，仅编译标识，M115 不输出）          |
 | M115 的 MACHINE_TYPE | `3D Printer`（未设 `CUSTOM_MACHINE_NAME`，Marlin 默认值；OpenPnP 靠行尾 `UUID` 认机） |
-| MCU          | STM32F407VET6（ARM Cortex-M4 @ 168 MHz） |
-| Flash / SRAM | 512 KB / 192 KB                        |
-| 驱动接口         | 6 × TMC2209（单线 UART 回读）                |
+| MCU                 | STM32F407VET6（ARM Cortex-M4 @ 168 MHz）                                  |
+| Flash / SRAM        | 512 KB / 192 KB                                                         |
+| 驱动接口                | 6 × TMC2209（单线 UART 回读）                                                 |
 
 ### 📁 硬件资料索引（`docs/hardware/`）
 
-| 资料 | 文件 | 说明 |
-|------|------|------|
-| 📄 原理图 | `SCH_插板_主板电路图.pdf` | 嘉立创EDA 导出，接线核对的第一依据 |
-| 🗂 Gerber 打样文件 | `Gerber_主板_2026-10-21.zip` | 16 个文件，可直接交给板厂打样 |
-| 🔌 **接线指南** | [`接线指南.md`](docs/hardware/接线指南.md) | **全部座子针序逐脚核实**：电源 / 电机 / 限位 / MOS 泵阀 / 灯带 / RS485 / 扩展口，含上电检查六步 |
-| ✔ 引脚核对记录 | [`主板电路图核对.md`](docs/hardware/主板电路图核对.md) | 原理图与固件引脚头文件逐脚比对明细 |
-| 🧾 插板 BOM 物料清单 | [`插板BOM物料清单.md`](docs/hardware/插板BOM物料清单.md) | 43 行物料 + LCSC 编号，含 TMC2209 需单独加购等坑位提醒 |
-| 🖱 交互式 BOM | `InteractiveBOM_插板_2026-10-22.html` | 24 MB，本地浏览器打开，点位号高亮 PCB 位置（不入库，[从 Release 单独下载](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/InteractiveBOM_2026-10-22.html)） |
-| 📦 完整发行包（Windows） | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) | **OpenPnP 深度定制版**（绿色版 + 内置 Java 17 运行时，约 320 MB） |
-| 📦 发行包（Linux x64） | [lfpnp_v1.0-openpnp-linux-x64.tar.gz](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/lfpnp_v1.0-openpnp-linux-x64.tar.gz) | 同一套定制程序，内置 Linux JRE 17（约 227 MB），`chmod +x OpenPnP/OpenPnP.sh` 后运行 |
+| 资料                | 文件                                                                                                                                                             | 说明                                                                                                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 📄 原理图            | `SCH_插板_主板电路图.pdf`                                                                                                                                             | 嘉立创EDA 导出，接线核对的第一依据                                                                                                                                                 |
+| 🗂 Gerber 打样文件    | `Gerber_主板_2026-10-21.zip`                                                                                                                                     | 16 个文件，可直接交给板厂打样                                                                                                                                                    |
+| 🔌 **接线指南**       | [`接线指南.md`](docs/hardware/接线指南.md)                                                                                                                             | **全部座子针序逐脚核实**：电源 / 电机 / 限位 / MOS 泵阀 / 灯带 / RS485 / 扩展口，含上电检查六步                                                                                                     |
+| ✔ 引脚核对记录          | [`主板电路图核对.md`](docs/hardware/主板电路图核对.md)                                                                                                                       | 原理图与固件引脚头文件逐脚比对明细                                                                                                                                                   |
+| 🧾 插板 BOM 物料清单    | [`插板BOM物料清单.md`](docs/hardware/插板BOM物料清单.md)                                                                                                                   | 43 行物料 + LCSC 编号，含 TMC2209 需单独加购等坑位提醒                                                                                                                               |
+| 🖱 交互式 BOM        | `InteractiveBOM_插板_2026-10-22.html`                                                                                                                            | 24 MB，本地浏览器打开，点位号高亮 PCB 位置（不入库，[从 Release 单独下载](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/InteractiveBOM_2026-10-22.html)） |
+| 📦 完整发行包（Windows） | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0)                                                   | **OpenPnP 深度定制版**（绿色版 + 内置 Java 17 运行时，约 320 MB）                                                                                                                    |
+| 📦 发行包（Linux x64） | [lfpnp\_v1.0-openpnp-linux-x64.tar.gz](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/lfpnp_v1.0-openpnp-linux-x64.tar.gz) | 同一套定制程序，内置 Linux JRE 17（约 227 MB），`chmod +x OpenPnP/OpenPnP.sh` 后运行                                                                                                 |
 
-> 💡 发行包内的 OpenPnP **不是原版**，是基于 OpenPnP 深度修改的上位机：**全中文界面**、
-> 「问题 & 解决方案」面板中文翻译、飞达类型中文名、拼板阵列即时刷新、单板文件浏览修复、
-> 导入贴片列表、重复贴片、贴完后 / 异常状态指令、**同拍（并行底视）**功能、
-> **一键校正**（基准点 / 相机标定 / 吸嘴尖视觉校准 / 皮带间隙一条龙）等定制内容，
-> 新增飞达类型（AS2 自动飞达、蝌蚪飞达等），使用独立配置目录 `.lfpnp`
-> （与原版 `.openpnp2` 互不干扰，可同机共存）。
+> 💡 发行包内的 OpenPnP **不是原版**，是基于 OpenPnP 深度修改的上位机：**全中文界面**、  
+> 「问题 & 解决方案」面板中文翻译、飞达类型中文名、拼板阵列即时刷新、单板文件浏览修复、  
+> 导入贴片列表、重复贴片、贴完后 / 异常状态指令、**同拍（并行底视）**&#x529F;能、  
+> **一键校正**（基准点 / 相机标定 / 吸嘴尖视觉校准 / 皮带间隙一条龙）等定制内容，  
+> 新增飞达类型（AS2 自动飞达、蝌蚪飞达等），使用独立配置目录 `.lfpnp`  
+> （与原版 `.openpnp2` 互不干扰，可同机共存）。  
+> 逐项差异（新增 16 类 / 修改 57 类、UI 重设计、同拍算法、一键校正调用链）见
+> [`docs/software/OpenPnP定制版与原版差异.md`](docs/software/OpenPnP定制版与原版差异.md)。
 
 ### 完整引脚表（来自 `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`）
 
-> ✅ **已与实物主板原理图逐脚核对**（`docs/hardware/SCH_插板_主板电路图.pdf`）：
-> 六轴 STEP/DIR/EN/UART/DIAG、限位、蜂鸣器、灯光、AUX、RS485、ID 引脚与原理图
+> ✅ **已与实物主板原理图逐脚核对**（`docs/hardware/SCH_插板_主板电路图.pdf`）：  
+> 六轴 STEP/DIR/EN/UART/DIAG、限位、蜂鸣器、灯光、AUX、RS485、ID 引脚与原理图  
 > **全部一致**，固件无需修改即可驱动这块板子。
 
-所有引脚都在这一份头文件里定义，"当前状态"指本固件配置下是否实际启用。
+所有引脚都在这一份头文件里定义，"当前状态"指本固件配置下是否实际启用。  
 表中「板上丝印」为原理图上的网络名 / 轴标号。
 
 **① 步进电机（6 路 TMC2209，单线 UART）**
 
-| 轴 | 板上丝印 | STEP | DIR | ENABLE | UART（TX=RX） | DIAG | 电机插座 | 状态 |
-|----|----------|------|-----|--------|---------------|------|----------|------|
-| X | X | `PB15` | `PB14` | `PD9` | `PD8` | `PB10` | CN29 | 启用 |
-| Y | Y1 | `PE15` | `PE14` | `PB13` | `PB12` | `PB11` | CN30 | 启用 |
-| Y2 | Y2 | `PD6` | `PD7` | `PA3` | `PA2` | `PC12` | CN34 | 启用（双 Y 同步） |
-| Z | Z | `PE7` | `PB1` | `PE9` | `PE8` | `PB5` | CN32 | 启用 |
-| A（I 轴） | L（左吸嘴） | `PC4` | `PA4` | `PB0` | `PC5` | `PC10` | CN33 | 启用（旋转） |
-| B（J 轴） | R（右吸嘴） | `PE11` | `PE10` | `PE13` | `PE12` | `PC11` | CN31 | 启用（旋转） |
+| 轴      | 板上丝印   | STEP   | DIR    | ENABLE | UART（TX=RX） | DIAG   | 电机插座 | 状态         |
+| ------ | ------ | ------ | ------ | ------ | ----------- | ------ | ---- | ---------- |
+| X      | X      | `PB15` | `PB14` | `PD9`  | `PD8`       | `PB10` | CN29 | 启用         |
+| Y      | Y1     | `PE15` | `PE14` | `PB13` | `PB12`      | `PB11` | CN30 | 启用         |
+| Y2     | Y2     | `PD6`  | `PD7`  | `PA3`  | `PA2`       | `PC12` | CN34 | 启用（双 Y 同步） |
+| Z      | Z      | `PE7`  | `PB1`  | `PE9`  | `PE8`       | `PB5`  | CN32 | 启用         |
+| A（I 轴） | L（左吸嘴） | `PC4`  | `PA4`  | `PB0`  | `PC5`       | `PC10` | CN33 | 启用（旋转）     |
+| B（J 轴） | R（右吸嘴） | `PE11` | `PE10` | `PE13` | `PE12`      | `PC11` | CN31 | 启用（旋转）     |
 
-> 板上丝印 **L = 左吸嘴旋转轴**（固件 I 轴，G 代码 `A`）、**R = 右吸嘴旋转轴**
-> （固件 J 轴，G 代码 `B`）。每个驱动座 `DIAG` 经跳线**默认断开**，要玩无感
+> 板上丝印 **L = 左吸嘴旋转轴**（固件 I 轴，G 代码 `A`）、**R = 右吸嘴旋转轴**  
+> （固件 J 轴，G 代码 `B`）。每个驱动座 `DIAG` 经跳线**默认断开**，要玩无感  
 > 归位（StallGuard）需先短接对应跳线。
 
-UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 PDN_UART 通讯，
-波特率固定 `19200`（降低速率换可靠性）。注意 Y2 是**实际启用**的
+UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 PDN_UART 通讯，  
+波特率固定 `19200`（降低速率换可靠性）。注意 Y2 是**实际启用**的  
 （`Configuration.h` 中 `Y2_DRIVER_TYPE TMC2209`），所以整机是 6 个电机而非 5 个。
 
 **② 限位开关与归位方式**
 
-| 轴 | 引脚 | 说明 |
-|----|------|------|
-| X 最小端 | `PC6` | 实体限位开关 |
+| 轴     | 引脚     | 说明     |
+| ----- | ------ | ------ |
+| X 最小端 | `PC6`  | 实体限位开关 |
 | Y 最小端 | `PD15` | 实体限位开关 |
 | Z 最小端 | `PD14` | 实体限位开关 |
 
-`SENSORLESS_HOMING`（无传感器归位）当前为关闭状态，因此 DIAG 引脚虽已接线，
+`SENSORLESS_HOMING`（无传感器归位）当前为关闭状态，因此 DIAG 引脚虽已接线，  
 归位仍走实体开关。想启用需打开该宏并调整 `X/Y_STALL_SENSITIVITY`。
 
 **③ 风扇 / 蜂鸣器 / 灯带**
 
-| 功能 | 板上丝印 | 引脚 | 状态 |
-|------|----------|------|------|
+| 功能              | 板上丝印         | 引脚    | 状态                           |
+| --------------- | ------------ | ----- | ---------------------------- |
 | 输出 1（`M106 P0`） | MOS-1 → CN24 | `PB8` | 启用（`FAN_COUNT` = 4），24V 低边开关 |
-| 输出 2（`M106 P1`） | MOS-2 → CN23 | `PB9` | 启用，24V 低边开关 |
-| 输出 3（`M106 P2`） | MOS-3 → CN22 | `PE5` | 启用，24V 低边开关 |
-| 输出 4（`M106 P3`） | MOS-4 → CN21 | `PE6` | 启用，24V 低边开关 |
-| 辅助风扇（控制器风扇） | FAN → CN20 | `PE2` | 启用，任一电机使能即转，停机 120 s 后关闭 |
-| 蜂鸣器 | BUZZER | `PA7` | 启用（`SPEAKER`） |
-| 底部环形灯 | BTM-LIGHT | `PC7` | 启用，18 颗，`NEO_GRB` |
-| 顶部环形灯 | TOP-LIGHT | `PC8` | 启用，18 颗；`M150 S1 ...` 可单独控制 |
+| 输出 2（`M106 P1`） | MOS-2 → CN23 | `PB9` | 启用，24V 低边开关                  |
+| 输出 3（`M106 P2`） | MOS-3 → CN22 | `PE5` | 启用，24V 低边开关                  |
+| 输出 4（`M106 P3`） | MOS-4 → CN21 | `PE6` | 启用，24V 低边开关                  |
+| 辅助风扇（控制器风扇）     | FAN → CN20   | `PE2` | 启用，任一电机使能即转，停机 120 s 后关闭     |
+| 蜂鸣器             | BUZZER       | `PA7` | 启用（`SPEAKER`）                |
+| 底部环形灯           | BTM-LIGHT    | `PC7` | 启用，18 颗，`NEO_GRB`            |
+| 顶部环形灯           | TOP-LIGHT    | `PC8` | 启用，18 颗；`M150 S1 ...` 可单独控制  |
 
-> MOS-1～4 是板上 **24V 低边开关输出**（30H10K NMOS + 续流二极管），真空泵、
-> 电磁阀、小风扇都接这里，用 `M106 P0..P3 S0..255` 调。
-> 环形灯接线：MCU → SN74LVC2G34 缓冲（3.3V→5V 电平转换）→ XH2.54-3P 座
+> MOS-1～4 是板上 **24V 低边开关输出**（30H10K NMOS + 续流二极管），真空泵、  
+> 电磁阀、小风扇都接这里，用 `M106 P0..P3 S0..255` 调。  
+> 环形灯接线：MCU → SN74LVC2G34 缓冲（3.3V→5V 电平转换）→ XH2.54-3P 座  
 > （5V / 信号 / GND），标准 WS2812 接法，`M150` 说明照常适用。
 
 **④ 总线接口**
 
-| 总线 | 引脚 | 用途 |
-|------|------|------|
-| SPI | MISO `PB4` / MOSI `PB5` / SCK `PB3` | 备用 TMC SPI 模式（本板走 UART，未使用） |
-| I²C | SDA `PB7` / SCL `PB6` | 板上接了 PCA9545A 多路复用（见⑥），同时引到 AUX 口 |
+| 总线    | 引脚                                           | 用途                                  |
+| ----- | -------------------------------------------- | ----------------------------------- |
+| SPI   | MISO `PB4` / MOSI `PB5` / SCK `PB3`          | 备用 TMC SPI 模式（本板走 UART，未使用）         |
+| I²C   | SDA `PB7` / SCL `PB6`                        | 板上接了 PCA9545A 多路复用（见⑥），同时引到 AUX 口   |
 | RS485 | DI `PA9` / RO `PA10` / DE `PD11` / RE `PD12` | 经 MAX3078 收发器接 `FEEDERS` 端子（智能飞达总线） |
 
-> ⚠️ `PB5` 被复用为 `Z_DIAG_PIN` 与 `MOSI_PIN`。本板 TMC 走 UART 不用 SPI，
+> ⚠️ `PB5` 被复用为 `Z_DIAG_PIN` 与 `MOSI_PIN`。本板 TMC 走 UART 不用 SPI，  
 > 因此不冲突；若要外接 SPI 设备，Z 轴的无传感器归位需另择引脚。
 
 **⑤ 板级识别与系统引脚**
 
-| 功能 | 引脚 | 说明 |
-|------|------|------|
-| 板版本 ID | `PD0` / `PD1` / `PD2` / `PD3` | 板上 ID0–ID3 用 0Ω 电阻选择；需先设输入上拉再读（文件末尾有 `M42`/`M43` 示例） |
-| 通用 IO（AUX 控制） | `PD13` | 网络名 `AUX`，可写可读 |
-| USB | `PA11` / `PA12` | 芯片固定，虚拟串口 |
-| SWD 调试 | `PA13` / `PA14` | ⚠️ 板上同时引出为 `IO72` / `IO76`（4.7 kΩ 上拉），调试时注意外设勿驱动这两线 |
-| BOOT1 | `PB2` | 10 kΩ 下拉，正常从主 Flash 启动 |
-| EEPROM | 无外置芯片 | SRAM 模拟，8 KB（`MARLIN_EEPROM_SIZE 0x2000`，但 `EEPROM_SETTINGS` 未启用） |
+| 功能            | 引脚                            | 说明                                                                |
+| ------------- | ----------------------------- | ----------------------------------------------------------------- |
+| 板版本 ID        | `PD0` / `PD1` / `PD2` / `PD3` | 板上 ID0–ID3 用 0Ω 电阻选择；需先设输入上拉再读（文件末尾有 `M42`/`M43` 示例）              |
+| 通用 IO（AUX 控制） | `PD13`                        | 网络名 `AUX`，可写可读                                                    |
+| USB           | `PA11` / `PA12`               | 芯片固定，虚拟串口                                                         |
+| SWD 调试        | `PA13` / `PA14`               | ⚠️ 板上同时引出为 `IO72` / `IO76`（4.7 kΩ 上拉），调试时注意外设勿驱动这两线               |
+| BOOT1         | `PB2`                         | 10 kΩ 下拉，正常从主 Flash 启动                                            |
+| EEPROM        | 无外置芯片                         | SRAM 模拟，8 KB（`MARLIN_EEPROM_SIZE 0x2000`，但 `EEPROM_SETTINGS` 未启用） |
+
 
 **⑥ 板上已接线、固件还没用上的部分**
 
@@ -377,12 +379,13 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
 引脚定义在 `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV{3,4,5}.h`。
 
 ```text
-qingwa-pnp-marlin/
+qingwa-openpnp-hongli/
 ├── .devcontainer/              # VS Code 开发容器（构建环境一键起）
 ├── .github/                    # GitHub CI / 社区配置（test-builds 等工作流）
 ├── .trellis/                   # AI 辅助开发工作流脚手架（可选）
+├── .vscode/                    # VS Code 工作区设置（C/C++ IntelliSense、调试、推荐扩展）
 ├── .workbuddy/                 # AI 协作工作日志与项目记忆（不参与构建）
-├── .openpnp2/                  # OpenPnP 上位机配置（随仓库走，23 个文件）
+├── .openpnp2/                  # OpenPnP 上位机配置（随仓库走，23 个入库文件）
 │   ├── machine.xml             #   机器配置：轴 / 相机 / 吸嘴 / 驱动 / 光照
 │   ├── parts.xml  packages.xml #   元件库与封装定义
 │   ├── boards.xml  panels.xml  #   板卡与拼板定义
@@ -395,6 +398,7 @@ qingwa-pnp-marlin/
 │   ├── config.ini              #   Marlin 编译期配置（ini 语法，默认未启用）
 │   ├── Makefile                #   供 pio/arduino 的 make 入口
 │   ├── Version.h               #   版本字符串（构建期覆盖用）
+│   ├── lib/                    #   Marlin 自带第三方库（随源码一起编译）
 │   │
 │   │   ── 主板（Motherboard）配置 ──
 │   ├── rev5-config/            #   REV5 主板配置快照（与激活配置对照/归档）
@@ -425,11 +429,17 @@ qingwa-pnp-marlin/
 │   │   └── README-config-i18n.md         # 两个脚本的用法说明
 │   ├── share/vscode/auto_build.py                #   Auto Build（PIO Build）
 │   └── tests/                  #   make tests-all-local 等自动化测试
-├── config/  docker/  docs/     # 文档 / Docker / dev 文档（Bresenham、Serial…）
-│   └── hardware/               #   ⭐ 主板原理图 PDF + 逐脚核对报告
+├── docs/                       # 开发者文档（Bresenham、Serial、Queue、Cutter…）
+│   ├── hardware/               #   ⭐ 硬件资料：原理图 PDF / Gerber / 接线指南 / BOM / 逐脚核对
+│   └── software/               #   ⭐ 上位机资料：OpenPnP 定制版与原版差异详解
+├── config/  docker/            # 配置说明（config/README.md）/ 容器化构建（docker/Dockerfile）
 ├── ini/                        # PlatformIO 环境矩阵（按芯片分类）
 │   └── stm32f4.ini             #   内含 [env:Opulo_Lumen_REV3] / REV4 / REV5
-├── .editorconfig  .gitattributes
+├── lfpnp_v1.0/                 # OpenPnP 定制版 Windows 发行包（约 320 MB，⚠️ 不入库）
+├── lfpnp_v1.0-linux/           # 同上 Linux 版组装目录（内置 JRE + 启动脚本，⚠️ 不入库）
+├── lfpnp_v1.0-openpnp-bundle.zip        # Windows 发行包压缩件（⚠️ 不入库，从 Release 获取）
+├── lfpnp_v1.0-openpnp-linux-x64.tar.gz  # Linux 发行包压缩件（⚠️ 不入库，从 Release 获取）
+├── .editorconfig  .gitattributes  .gitignore
 ├── platformio.ini              # ⭐ PlatformIO 工程入口（default_envs = Opulo_Lumen_REV5）
 ├── Makefile                    # make 快捷入口
 ├── marlin.code-workspace       # VS Code 多根工作区
@@ -438,6 +448,9 @@ qingwa-pnp-marlin/
 ├── m300_editor/                # 🎵 网页版 M300 蜂鸣器旋律编辑器（含教程与截图）
 └── README.md / README.en.md    # 多语言说明（中文默认）
 ```
+
+> ⚠️ 标「不入库」的 4 项是第三方二进制产物 / 超大档案（合计约 1.2 GB），已在 `.gitignore` 中排除，
+> 不会进入 Git 历史；需要时从 [Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) 下载。
 
 ### 两套程序的配置差异要点
 
@@ -573,6 +586,7 @@ SUCCESS
 > ⏳ 第一次编译要联网下载整个工具链，**卡在 `Downloading` 五到十分钟很正常**，
 > 别急着按 Ctrl+C。之后改配置再编译，一般十几秒就完事。
 > 报错了看最后一条 `Error` 的英文原句，FAQ 里有「`pio run` 编译失败」一条对照排查。
+
 
 ### 第 3 步：让主板进入烧录模式
 
@@ -967,6 +981,7 @@ M114                    ; 查询当前各轴位置（旋转轴单位为度）
 | Marlin 固件（`Configuration*.h`） | 安全上限、上电默认值 | ✅ |
 | 运行时 G 代码（串口 / 脚本） | 临时生效，重启还原 | ❌ |
 
+
 > 前提：本固件 **`EEPROM_SETTINGS` 未启用**（见 FAQ），所以任何 `M9xx` / `M2xx`
 > 运行时改动都**不会掉电保存**。
 
@@ -1327,6 +1342,7 @@ RESET）；② 换一根确定支持数据的 USB 线；③ Linux 下确认有 `
 3. 点「▶ 播放」实时试听；点时间轴上的色块可单独试听单个音符。
 4. 满意后点「⬇ 导出 G-code」→「📋 复制」，粘贴回
    `Configuration_adv.h` 的 `STARTUP_COMMANDS` 引号内，重新编译烧录。
+
 
 **关于自定义波形：** 编辑器支持手绘波形 / 谐波滑块调节，但这只用于
 **电脑端预览听感**。实际固件的压电蜂鸣器只能输出方波，M300 指令只

@@ -199,6 +199,9 @@ How to choose among the four feeder configs:
 > calibration / nozzle-tip vision / belt backlash in one pass), and extra feeder
 > types (AS2 auto feeder, tadpole feeder). It stores its config in a separate
 > `.lfpnp` directory (coexists with stock OpenPnP's `.openpnp2` on the same machine).
+> A class-level diff (16 new classes / 57 modified, UI redesign, simultaneous-vision
+> algorithm, one-click calibration call chain) is in
+> [`docs/software/OpenPnP定制版与原版差异.md`](docs/software/OpenPnP定制版与原版差异.md).
 
 ### Complete pin map (from `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV5.h`)
 
@@ -368,10 +371,11 @@ Board definitions (pins / clock / upload protocol) live in
 pin maps in `Marlin/src/pins/stm32f4/pins_OPULO_LUMEN_REV{3,4,5}.h`.
 
 ```text
-qingwa-pnp-marlin/
+qingwa-openpnp-hongli/
 ├── .devcontainer/              # VS Code dev container (build env in one click)
 ├── .github/                    # GitHub CI / community config (test-builds etc.)
 ├── .trellis/                   # AI-assisted development workflow scaffold (optional)
+├── .vscode/                    # VS Code settings (C/C++ IntelliSense, debug, recommended extensions)
 ├── .workbuddy/                 # AI collaboration logs and project memory (not a build input)
 ├── .openpnp2/                  # OpenPnP host configuration (tracked, 23 files)
 │   ├── machine.xml             #   Machine setup: axes / cameras / nozzles / drivers / lighting
@@ -386,6 +390,7 @@ qingwa-pnp-marlin/
 │   ├── config.ini              #   Compile-time config via ini (disabled by default)
 │   ├── Makefile                #   Make entry for pio/arduino
 │   ├── Version.h               #   Version strings (overridable at build time)
+│   ├── lib/                    #   Bundled third-party libraries (compiled with the source)
 │   │
 │   │   ── Motherboard configuration ──
 │   ├── rev5-config/            #   REV5 motherboard snapshot (reference/archive)
@@ -416,11 +421,17 @@ qingwa-pnp-marlin/
 │   │   └── README-config-i18n.md         # usage notes for both scripts
 │   ├── share/vscode/auto_build.py                #   Auto Build (PIO Build)
 │   └── tests/                  #   make tests-all-local etc.
-├── config/  docker/  docs/     # Docs / Docker / dev docs (Bresenham, Serial…)
-│   └── hardware/               #   ⭐ motherboard schematic PDF + pin cross-check report
+├── docs/                       # Developer docs (Bresenham, Serial, Queue, Cutter…)
+│   ├── hardware/               #   ⭐ Hardware: schematic PDF / Gerber / wiring guide / BOM / pin log
+│   └── software/               #   ⭐ Host software: customized vs. stock OpenPnP deep dive
+├── config/  docker/            # Config notes (config/README.md) / containerized build (Dockerfile)
 ├── ini/                        # PlatformIO env matrix (grouped by MCU)
 │   └── stm32f4.ini             #   contains [env:Opulo_Lumen_REV3] / REV4 / REV5
-├── .editorconfig  .gitattributes
+├── lfpnp_v1.0/                 # OpenPnP customized Windows bundle (~320 MB, ⚠️ not tracked)
+├── lfpnp_v1.0-linux/           # Same for Linux (bundled JRE + launcher script, ⚠️ not tracked)
+├── lfpnp_v1.0-openpnp-bundle.zip        # Windows bundle archive (⚠️ not tracked, get it from Releases)
+├── lfpnp_v1.0-openpnp-linux-x64.tar.gz  # Linux bundle archive (⚠️ not tracked, get it from Releases)
+├── .editorconfig  .gitattributes  .gitignore
 ├── platformio.ini              # ⭐ PlatformIO entry (default_envs = Opulo_Lumen_REV5)
 ├── Makefile                    # make shortcuts
 ├── marlin.code-workspace       # VS Code multi-root workspace
@@ -429,6 +440,10 @@ qingwa-pnp-marlin/
 ├── m300_editor/                # 🎵 Web-based M300 buzzer melody editor (with tutorial)
 └── README.md / README.en.md    # Multilingual docs (Chinese by default)
 ```
+
+> ⚠️ The 4 items marked "not tracked" are third-party binaries / oversized archives (~1.2 GB total).
+> They are excluded via `.gitignore` and never enter Git history — download them from
+> [Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0).
 
 ### Key differences between the two programs
 
