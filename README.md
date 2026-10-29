@@ -443,7 +443,7 @@ qingwa-openpnp-hongli/
 │   ├── core.test.js            #   Node 单元测试（23 个用例，中文注释）
 │   ├── style.css               #   样式表（367 行，12 个区块注释）
 │   ├── serve.py                #   本地 HTTP 服务器（中文注释）
-│   └── start.bat               #   Windows 一键启动（中文注释）
+│   └── start.bat               #   Windows 一键启动（ASCII 注释；cmd 无法可靠解析 UTF-8 中文批处理）
 ├── M300 蜂鸣器旋律编辑器/       # 🎵 网页版 M300 旋律编辑器（2026-10-29 重命名，原 m300_editor/）
 │   ├── m300_editor.html        #   单文件网页应用
 │   ├── README.md               #   使用教程 + 截图

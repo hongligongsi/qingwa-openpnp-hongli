@@ -436,7 +436,7 @@ qingwa-openpnp-hongli/
 │   ├── core.test.js            #   Node unit tests (23 cases, commented)
 │   ├── style.css               #   Stylesheet (367 lines, 12 section comments)
 │   ├── serve.py                #   Local HTTP server (commented)
-│   └── start.bat               #   One-click Windows launcher (commented)
+│   └── start.bat               #   One-click Windows launcher (ASCII comments; cmd.exe mis-parses UTF-8 CJK)
 ├── M300 蜂鸣器旋律编辑器/       # 🎵 Web-based M300 melody editor (renamed 2026-10-29, formerly m300_editor/)
 │   ├── m300_editor.html        #   Single-file web app
 │   ├── README.md               #   Usage tutorial + screenshots
