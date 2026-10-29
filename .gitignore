@@ -193,3 +193,6 @@ lfpnp_v1.0-openpnp-linux-x64.tar.gz
 # 硬件调试台内置便携 Python（免安装版必需，约 23MB，强制纳入版本管理）
 !OpenPnP网页版硬件调试工具/runtime/
 !OpenPnP网页版硬件调试工具/runtime/**
+
+# 硬件调试台便携版打包产物（pack.bat 生成）
+青蛙硬件调试台_*_便携版_*.zip
