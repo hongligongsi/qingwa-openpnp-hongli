@@ -11,6 +11,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import quote
 import os
+import threading
+import webbrowser
 
 # 入口页面文件名（中文名，不再是服务器默认自动打开的 index.html）
 ENTRY_PAGE = '硬件调试台.html'
@@ -33,4 +35,7 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__ == '__main__':
     os.chdir(Path(__file__).resolve().parent)
     print('青蛙硬件调试台: http://localhost:8765 (Ctrl+C to stop)')
+    # 0.8 秒后自动用系统默认浏览器打开页面（Timer 异步执行，不阻塞服务器启动；
+    # 若默认浏览器不是 Chrome/Edge，请手动复制上面地址到 Chrome/Edge，串口和摄像头才可用）
+    threading.Timer(0.8, lambda: webbrowser.open('http://localhost:8765/')).start()
     ThreadingHTTPServer(('127.0.0.1', 8765), Handler).serve_forever()
