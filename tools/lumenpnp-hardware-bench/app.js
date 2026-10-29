@@ -267,13 +267,22 @@ $('connect').addEventListener('click', async()=>{
     if($('mode').value==='serial') {
       if(!navigator.serial)throw Error('当前浏览器不支持 Web Serial，请使用 Chrome / Edge 并通过 localhost 打开');
       port=await navigator.serial.requestPort();
-      await port.open({baudRate:config.baud,dataBits:8,stopBits:1,parity:'none',flowControl:'none',bufferSize:8192});
+      const openOptions={baudRate:config.baud,dataBits:8,stopBits:1,parity:'none',flowControl:'none',bufferSize:8192};
+      try {await port.open(openOptions);}
+      catch(openError) {
+        // 上一次断开若未完全关闭，同一串口对象会残留"已打开"状态：先补关再重试一次。
+        log('error','串口打开失败（'+openError.message+'），尝试自动恢复…');
+        let recovered=false;
+        try {await port.close();await port.open(openOptions);recovered=true;}catch{}
+        if(!recovered)throw Error('无法打开串口：'+openError.message+'；请重新插拔 USB 线、关闭 OpenPnP 后重试');
+        log('info','串口已恢复打开');
+      }
       writer=port.writable.getWriter();
       channel=new Bench.Channel(data=>writer.write(new TextEncoder().encode(data)), {...config},log);
       connected=true;readTask=readSerial(port,channel,token);
       log('info',`USB 串口已打开 · ${config.baud} baud；等待主控启动 ${config.settle} ms`);
       await new Promise(resolve=>setTimeout(resolve,config.settle));
-      if(channel.halted)throw Error('串口异常，请检查设备');
+      if(!channel || channel.halted)throw Error('连接已被断开或串口异常，请重新连接');
       log('info','就绪；核对配置后勾选“允许硬件控制”，连接时不自动发送指令');
       toast('设备已连接，请勾选“允许硬件控制”后再控制设备动作');
     } else {
@@ -283,11 +292,25 @@ $('connect').addEventListener('click', async()=>{
   } catch(e) { log('error',e.message);toast(e.message);if(port)await disconnect(); }
   finally {connecting=false;render();}
 });
+function withTimeout(promise, ms, message) { return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(Error(message)), ms))]); }
+async function closeSerialPort(target) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try { await withTimeout(target.close(), 3000, '串口关闭等待超时'); return true; }
+    catch (e) { if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 300)); else log('error', '串口关闭失败：' + e.message); }
+  }
+  return false;
+}
 async function disconnect() {
   if(closing)return;closing=true;connected=false;motionStopped=false;stopBusy=false;++session;channel?.cancel('设备已断开');$('armed').checked=false;resetState();render();
-  try {if(reader)await reader.cancel();if(readTask)await readTask;if(writer){await writer.ready;writer.releaseLock();writer=null;}if(port)await port.close();}
-  catch(e){log('error','断开串口：'+e.message);}
-  finally {port=null;reader=null;writer=null;readTask=null;channel=null;closing=false;log('info','连接已断开；硬件输出状态未作更改');render();}
+  const target=port;let closed=true;
+  try {
+    // 每一步独立兜底：任何一步失败都不再跳过 port.close()，避免串口泄漏导致重连失败。
+    if(reader){try{await reader.cancel();}catch(e){log('error','取消串口读取：'+e.message);}}
+    if(readTask){try{await readTask;}catch(e){log('error','读取任务结束：'+e.message);}}
+    if(writer){try{writer.releaseLock();}catch(e){log('error','释放写入锁：'+e.message);}writer=null;}
+    if(target)closed=await closeSerialPort(target);
+  }
+  finally {port=null;reader=null;writer=null;readTask=null;channel=null;closing=false;log('info',closed?'连接已断开；硬件输出状态未作更改':'连接已断开；串口未能完全关闭，若重连失败请重新插拔 USB 或刷新页面');if(!closed)toast('串口未能完全关闭；若重连失败，请重新插拔 USB 线或刷新页面');render();}
 }
 $('disconnect').addEventListener('click',disconnect);
 $('mode').addEventListener('change',()=>{$('armed').checked=false;resetState();render();});
@@ -368,7 +391,7 @@ $('resume-control').addEventListener('click',async()=>{
   finally{recoveryBusy=false;render();}
 });
 $('clear-log').addEventListener('click',()=>{$('log').replaceChildren();logEntries.length=0;});
-$('export-log').addEventListener('click',()=>download('lumenpnp-log-'+stamp()+'.txt',`LumenPnP Hardware Bench v2.4.2\n模式：${$('mode').value}\n`+logEntries.join('\n')));
+$('export-log').addEventListener('click',()=>download('lumenpnp-log-'+stamp()+'.txt',`LumenPnP Hardware Bench v2.4.3\n模式：${$('mode').value}\n`+logEntries.join('\n')));
 // Configuration editor. Saving and importing never execute hardware commands.
 const configLabels={baud:'波特率',timeout:'每条指令响应超时（ms）',settle:'连接启动等待（ms）',newline:'行结束符（LF / CRLF / CR）',ack:'确认响应正则',error:'错误响应正则',jog:'点动模板 · {axis} {distance} {feed}',homeX:'X 单轴回零',homeY:'Y 单轴回零',homeZ:'Z 单轴回零',homeAll:'全部回零',motorOff:'关闭电机',position:'查询坐标',stop:'软件急停指令',stopRaw:'急停使用原始字符（支持 \\xHH，不追加换行）',sharedLights:'联控：使用上灯参数，分别发送上下灯指令',nozzleLeftAxis:'左吸嘴轴（A / B）',nozzleRightAxis:'右吸嘴轴（A / B）',nozzleLeftCwPositive:'左吸嘴顺时针对应正方向（取消则反向）',nozzleRightCwPositive:'右吸嘴顺时针对应正方向（取消则反向）'};
 for(const [key,title]of outputs){configLabels[key+'On']=title+' · 开';configLabels[key+'Off']=title+' · 关';}

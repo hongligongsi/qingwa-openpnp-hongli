@@ -1,4 +1,4 @@
-/* OpenPnP Hardware Bench v2.4.2 — standalone, dependency-free protocol engine. */
+/* OpenPnP Hardware Bench v2.4.3 — standalone, dependency-free protocol engine. */
 (function (root) {
   'use strict';
   const DEFAULTS = {
