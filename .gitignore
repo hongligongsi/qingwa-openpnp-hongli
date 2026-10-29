@@ -174,9 +174,14 @@ tags
 lfpnp_v1.0/
 lfpnp_v1.0-linux/
 
+# hongli pnp 绿色版发行映像（同上，约 321 MB，含 OpenPnP.exe + 自带 Java 17 runtime）
+# 只忽略二进制映像本体，保留 honglipnp/README.md 与 安装说明.txt 入库
+honglipnp/OpenPnP/
+
 
 # 本地工作记忆（Agent 笔记，不入库）
 .workbuddy/
+.trae-html-share-packages/
 
 # 发行包 zip（已上传 GitHub Release lfpnp-v1.0，本地可删）
 lfpnp_v1.0-openpnp-bundle.zip

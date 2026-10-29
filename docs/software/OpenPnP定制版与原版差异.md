@@ -300,8 +300,9 @@ SimpleBlobDetector、SizeCheck、WritePartTemplateImage。
 
 - **删除类 0 个**：原版功能零裁剪；图标/脚本/声音等资源文件与原版一致
   （仅 logo iconset 文件名略有差异）
-- 配置目录独立为 `.lfpnp`（原版 `.openpnp2`），同机可与官方版共存；
-  安装版与绿色版共用 `.lfpnp`，覆盖升级不丢配置
+- 配置目录独立为 `.hlpnp`（原版 `.openpnp2`），同机可与官方版共存；
+  安装版与绿色版共用 `.hlpnp`，覆盖升级不丢配置
+  （早期 lfpnp v1.0 使用旧目录 `.lfpnp`，按新版需求口径已迁移为 `.hlpnp`）
 - 作业错误还支持 `Job.Error` 脚本钩子（`scriptJobError`），与状态指令互补
 
 ## 五、对青蛙贴片机的实际意义

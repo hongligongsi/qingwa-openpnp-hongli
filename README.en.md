@@ -1,6 +1,6 @@
 <p align="center">
   <b>🐸 Qingwa PnP Firmware · qingwa-pnp-marlin</b><br/>
-  A pick-and-place firmware based on Marlin 2.1.x + the Opulo LumenPnP REV5 board
+  A pick-and-place firmware based on Marlin 2.1.x + Opulo LumenPnP REV5 hardware reference for the Qingwa PnP
 </p>
 
 <p align="center">
@@ -10,7 +10,7 @@
   
   <a href="#-credits--license"><img src="https://img.shields.io/badge/Docs-CC%20BY--SA%204.0-blueviolet.svg" alt="Docs: CC BY-SA 4.0"></a>
   <img src="https://img.shields.io/badge/Marlin-2.1.x-important.svg" alt="Marlin 2.1.x">
-  <img src="https://img.shields.io/badge/Board-LumenPnP%20REV5-success.svg" alt="LumenPnP REV5">
+  <img src="https://img.shields.io/badge/Board-Qingwa%20REV5-success.svg" alt="Qingwa REV5">
   <img src="https://img.shields.io/badge/MCU-STM32F407VET6-informational.svg" alt="STM32F407VET6">
   <img src="https://img.shields.io/badge/Build-PlatformIO-orange.svg" alt="PlatformIO">
 </p>
@@ -167,11 +167,11 @@ How to choose among the four feeder configs:
 
 | Item | Value |
 |------|-------|
-| Physical board | Frog carrier board (custom design, **pin-compatible** with LumenPnP REV5) |
+| Physical board | Frog carrier board (custom design, **pin-compatible** with Opulo LumenPnP REV5) |
 | Schematic | `docs/hardware/SCH_插板_主板电路图.pdf` (JLCEDA V1.0, 2026-07-20) |
 | Gerber / drill | `docs/hardware/Gerber_主板_2026-10-21.zip` (16 files, fab-ready) |
 | Pin verification | ✅ checked pin by pin against the schematic — all match (details in `docs/hardware/主板电路图核对.md`) |
-| Compile-time board name | `LumenPnP Motherboard REV05` (`BOARD_INFO_NAME`, build label only — not printed by M115) |
+| Compile-time board name | `Qingwa Motherboard REV05` (`BOARD_INFO_NAME`, build label only — not printed by M115) |
 | M115 `MACHINE_TYPE` | `3D Printer` (no `CUSTOM_MACHINE_NAME` set; OpenPnP identifies the board by the trailing `UUID`) |
 | MCU | STM32F407VET6 (ARM Cortex-M4 @ 168 MHz) |
 | Flash / SRAM | 512 KB / 192 KB |
@@ -198,7 +198,8 @@ How to choose among the four feeder configs:
 > down-vision)** feature, a **one-click calibration** wizard (fiducials / camera
 > calibration / nozzle-tip vision / belt backlash in one pass), and extra feeder
 > types (AS2 auto feeder, tadpole feeder). It stores its config in a separate
-> `.lfpnp` directory (coexists with stock OpenPnP's `.openpnp2` on the same machine).
+> `.hlpnp` directory (coexists with stock OpenPnP's `.openpnp2` on the same
+> machine; the legacy lfpnp v1.0 release used `.lfpnp`).
 > A class-level diff (16 new classes / 57 modified, UI redesign, simultaneous-vision
 > algorithm, one-click calibration call chain) is in
 > [`docs/software/OpenPnP定制版与原版差异.md`](docs/software/OpenPnP定制版与原版差异.md).
@@ -362,7 +363,7 @@ they differ only in configuration files and the PlatformIO environment (env):
 
 | Program | Target hardware | MCU | Build env | Config source |
 |---|---|---|---|---|
-| **Motherboard firmware** | LumenPnP Motherboard REV5 (PnP main board) | STM32F407VET6 | `Opulo_Lumen_REV5` (default) | Active config in `Marlin/` root (snapshot: `rev5-config/`) |
+| **Motherboard firmware** | Qingwa Motherboard REV5 (PnP main board) | STM32F407VET6 | `Opulo_Lumen_REV5` (default) | Active config in `Marlin/` root (snapshot: `rev5-config/`) |
 | **Feeder firmware** | Electric feeder, REV4 controller | STM32F407VET6 | `Opulo_Lumen_REV4` | One of the three `Marlin/rev4-*-feeder-config/` folders |
 | **Feeder firmware (legacy)** | Electric feeder, REV3 controller | STM32F407VET6 | `Opulo_Lumen_REV3` | `Marlin/rev3-feeder-config/` |
 

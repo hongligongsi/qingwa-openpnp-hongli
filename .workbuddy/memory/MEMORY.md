@@ -39,6 +39,18 @@
 3. **纯格式化改动（对齐列、续行 `\`、压缩空格）不影响功能**，已用预处理输出
    逐字节比对确认。Configuration.h 现有 109 处续行、819 行有效代码（原 710 行）。
 
+## hongli pnp 产品线口径（易搞混，务必记住）
+- **honglipnp/ 是 jpackage 绿色版运行时映像**（321 MB，OpenPnP.exe + app/ + runtime/ 自带 Java 17.0.20.1）
+- 用户提供的「定制功能清单」是 **需求口径（PRD）**，不是已实现功能介绍。
+  权威规格：`docs/hongli-pnp-需求规格.md`（R1–R9 / 28 条 / 验收标准 / 优先级）。
+  规格不得写成"已实现"，实现状态单独对照（见该文档附录 A）
+- 待定版的口径冲突：配置目录 `.hlpnp`（需求）vs `.lfpnp`（安装说明.txt 旧）；
+  安装路径 `C:\honglipnp`（需求）vs `%LOCALAPPDATA%\OpenPnP`（安装说明.txt 旧）
+- 已知缺口：`ThickSliderUI` 尚未进入打包产物（jar 内无 Slider 类）
+- **定制版源码副本已丢失，但可完整重建**：上游 openpnp tag 2.6 已克隆至
+  `C:/Users/hongliwang/Desktop/openpnp-2.6-src`；产物=干净 2.6+16 新类（jar/上游对比 0 缺失）。
+  重建方案见 `docs/hongli-pnp-源码重建方案.md`；反编译用 honglipnp 自带 JRE
+
 ## 平台信息
 - 编译前需 `python3 ./.trellis/scripts/init_developer.py <name>`（trellis 工作流）
 - ARM 工具链：`C:\Users\hongliwang\.platformio\packages\toolchain-gccarmnoneeabi\bin\`

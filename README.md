@@ -2,7 +2,7 @@
 
 <b>🐸 青蛙贴片机 固件 · qingwa-pnp-marlin</b>
 
-基于 Marlin 2.1.x + Opulo LumenPnP REV5 主板的贴片机专用固件
+基于 Marlin 2.1.x + Opulo LumenPnP REV5 硬件参考的青蛙贴片机专用固件
 
 </p>
 
@@ -16,7 +16,7 @@
 
 ![Marlin 2.1.x](https://img.shields.io/badge/Marlin-2.1.x-important.svg)
 
-![LumenPnP REV5](https://img.shields.io/badge/Board-LumenPnP%20REV5-success.svg)
+![青蛙 REV5](https://img.shields.io/badge/Board-青蛙%20REV5-success.svg)
 
 ![STM32F407VET6](https://img.shields.io/badge/MCU-STM32F407VET6-informational.svg)
 
@@ -180,11 +180,11 @@
 
 | 项                   | 值                                                                       |
 | ------------------- | ----------------------------------------------------------------------- |
-| 实物主板                | 青蛙插板（自绘板，与 LumenPnP REV5 **引脚兼容**）                                      |
+| 实物主板                | 青蛙插板（自绘板，与 Opulo LumenPnP REV5 **引脚兼容**）                                      |
 | 原理图                 | `docs/hardware/SCH_插板_主板电路图.pdf`（嘉立创EDA V1.0，2026-07-20）                |
 | Gerber / 钻孔         | `docs/hardware/Gerber_主板_2026-10-21.zip`（16 个文件，可直接打样）                  |
 | 引脚核对                | ✅ 已与原理图逐脚核对，全部一致（明细见 `docs/hardware/主板电路图核对.md`）                        |
-| 固件编译期板名             | `LumenPnP Motherboard REV05`（`BOARD_INFO_NAME`，仅编译标识，M115 不输出）          |
+| 固件编译期板名             | `青蛙主板 REV05`（`BOARD_INFO_NAME`，仅编译标识，M115 不输出）          |
 | M115 的 MACHINE_TYPE | `3D Printer`（未设 `CUSTOM_MACHINE_NAME`，Marlin 默认值；OpenPnP 靠行尾 `UUID` 认机） |
 | MCU                 | STM32F407VET6（ARM Cortex-M4 @ 168 MHz）                                  |
 | Flash / SRAM        | 512 KB / 192 KB                                                         |
@@ -207,8 +207,8 @@
 > 「问题 & 解决方案」面板中文翻译、飞达类型中文名、拼板阵列即时刷新、单板文件浏览修复、  
 > 导入贴片列表、重复贴片、贴完后 / 异常状态指令、**同拍（并行底视）**&#x529F;能、  
 > **一键校正**（基准点 / 相机标定 / 吸嘴尖视觉校准 / 皮带间隙一条龙）等定制内容，  
-> 新增飞达类型（AS2 自动飞达、蝌蚪飞达等），使用独立配置目录 `.lfpnp`  
-> （与原版 `.openpnp2` 互不干扰，可同机共存）。  
+> 新增飞达类型（AS2 自动飞达、蝌蚪飞达等），使用独立配置目录 `.hlpnp`  
+> （与原版 `.openpnp2` 互不干扰，可同机共存；早期 lfpnp v1.0 旧版为 `.lfpnp`）。  
 > 逐项差异（新增 16 类 / 修改 57 类、UI 重设计、同拍算法、一键校正调用链）见
 > [`docs/software/OpenPnP定制版与原版差异.md`](docs/software/OpenPnP定制版与原版差异.md)。
 
@@ -368,7 +368,7 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
 
 | 程序           | 目标硬件                             | 主控芯片          | 构建 env                 | 配置来源                                  |
 | ------------ | -------------------------------- | ------------- | ---------------------- | ------------------------------------- |
-| **主板固件**     | LumenPnP Motherboard REV5（贴片机主板） | STM32F407VET6 | `Opulo_Lumen_REV5`（默认） | `Marlin/` 根目录激活配置（快照见 `rev5-config/`） |
+| **主板固件**     | 青蛙主板 REV5（贴片机主板） | STM32F407VET6 | `Opulo_Lumen_REV5`（默认） | `Marlin/` 根目录激活配置（快照见 `rev5-config/`） |
 | **飞达固件**     | 电动送料器（Feeder）REV4 主控             | STM32F407VET6 | `Opulo_Lumen_REV4`     | `Marlin/rev4-*-feeder-config/` 三选一    |
 | **飞达固件（旧款）** | 电动送料器（Feeder）REV3 主控             | STM32F407VET6 | `Opulo_Lumen_REV3`     | `Marlin/rev3-feeder-config/`          |
 
