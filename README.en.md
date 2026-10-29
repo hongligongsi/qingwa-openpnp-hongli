@@ -430,7 +430,7 @@ qingwa-openpnp-hongli/
 │   ├── hongli-pnp-源码重建方案.md     # Source rebuild plan
 │   └── hongli-pnp-需求规格.md         # Product requirement spec
 ├── OpenPnP网页版硬件调试工具/    # 🐸 Frog Hardware Bench v3.0 (added 2026-10-29)
-│   ├── index.html              #   Page structure
+│   ├── 硬件调试台.html          #   Page structure (entry page; serve.py redirects / here)
 │   ├── app.js                  #   Main app (511 lines, fully commented)
 │   ├── core.js                 #   Protocol engine (192 lines, fully commented)
 │   ├── core.test.js            #   Node unit tests (23 cases, commented)

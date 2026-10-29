@@ -437,7 +437,7 @@ qingwa-openpnp-hongli/
 │   ├── hongli-pnp-源码重建方案.md     # 源码重建技术路线
 │   └── hongli-pnp-需求规格.md         # 产品需求规格
 ├── OpenPnP网页版硬件调试工具/    # 🐸 青蛙硬件调试台 v3.0（新增）
-│   ├── index.html              #   页面结构
+│   ├── 硬件调试台.html          #   页面结构（入口页，serve.py 已将 / 重定向到此）
 │   ├── app.js                  #   主应用（511 行，全中文注释）
 │   ├── core.js                 #   协议引擎（192 行，全中文注释）
 │   ├── core.test.js            #   Node 单元测试（23 个用例，中文注释）
