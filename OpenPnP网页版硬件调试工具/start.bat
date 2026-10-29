@@ -1,18 +1,21 @@
 @echo off
 REM ============================================================
 REM  Frog Hardware Bench - Windows one-click launcher
-REM  Starts local server; open http://localhost:8765 in Chrome/Edge
-REM  (Chinese UI lives in serve.py / 硬件调试台.html; cmd.exe cannot
-REM   reliably parse UTF-8 Chinese comments, so keep this file ASCII)
+REM  Portable: uses bundled Python in runtime\python (no install
+REM  needed); falls back to system Python if bundle is missing.
+REM  Browser opens http://localhost:8765 automatically.
+REM  (ASCII only: cmd.exe cannot reliably parse UTF-8 CJK comments)
 REM ============================================================
 
-REM Switch to the folder where this bat lives
 cd /d "%~dp0"
+
+REM Prefer bundled portable Python, fall back to system python
+set "PYEXE=%~dp0runtime\python\python.exe"
+if not exist "%PYEXE%" set "PYEXE=python"
 
 echo Open http://localhost:8765 in Chrome or Edge.
 
-REM Start the Python HTTP server (serve.py, stdlib only)
-python serve.py
+"%PYEXE%" serve.py
 
 REM Keep window open to show any error message
 pause
