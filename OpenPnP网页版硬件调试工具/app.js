@@ -572,11 +572,28 @@ navigator.mediaDevices?.addEventListener('devicechange',()=>{
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!cameraRefreshBusy)cameraList().catch(e=>log('error','摄像头刷新失败：'+e.message));});
 async function startCamera(key){
   stopCamera(key);const slot=cameraSlots[key],token=slot.token;$('camera-start-'+key).disabled=true;$('camera-status-'+key).textContent='正在打开摄像头…';
+  // 把 getUserMedia 的英文 DOMException 翻译成中文处理建议
+  const cameraErrorHint=(e)=>{
+    const map={
+      NotFoundError:'找不到所选摄像头（设备 ID 已过期或被拔出），请点击「授权 / 刷新摄像头」后重新选择',
+      NotReadableError:'摄像头被其他程序占用（OpenPnP / 会议软件 / 相机应用），请关闭后重试',
+      NotAllowedError:'浏览器未获得摄像头权限，请点击地址栏左侧图标允许本站访问',
+      OverconstrainedError:'摄像头不支持请求的分辨率，请更换设备',
+      SecurityError:'请通过 localhost 或 HTTPS 打开'};
+    return map[e.name]||(e.name&&e.name!==e.message?e.name+'：'+e.message:e.message);
+  };
   try{
     if(!navigator.mediaDevices?.getUserMedia)throw Error('请通过 localhost 或 HTTPS 打开');
     const device=$('device-'+key).value;const other=cameraSlots[key==='top'?'bottom':'top'].stream?.getVideoTracks()[0]?.getSettings().deviceId;
     if(device && other===device)throw Error('该设备已用于另一路画面，请选择另一摄像头');
-    const stream=await navigator.mediaDevices.getUserMedia({video:{...(device?{deviceId:{exact:device}}:{}),width:{ideal:1280},height:{ideal:720}},audio:false});
+    let stream;
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{...(device?{deviceId:{exact:device}}:{}),width:{ideal:1280},height:{ideal:720}},audio:false});}
+    catch(e){
+      // 保存的设备 ID 过期（浏览器会按域名重新生成）时，自动降级为默认摄像头重试一次
+      if(e.name!=='NotFoundError'||!device)throw e;
+      log('error','保存的摄像头 ID 已失效，自动改用默认摄像头重试…');
+      stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720}},audio:false});
+    }
     if(token!==slot.token){stream.getTracks().forEach(t=>t.stop());return;}
     if(other && stream.getVideoTracks()[0]?.getSettings().deviceId===other){stream.getTracks().forEach(t=>t.stop());throw Error('选中了另一路正在使用的设备，请先刷新列表并选择另一摄像头');}
     slot.stream=stream;const v=$('video-'+key);v.srcObject=stream;await v.play();
@@ -584,7 +601,7 @@ async function startCamera(key){
     $('placeholder-'+key).hidden=true;const track=stream.getVideoTracks()[0],settings=track.getSettings();$('camera-status-'+key).textContent=`${settings.width} × ${settings.height} · ${track.label}`;
     track.addEventListener('ended',()=>{if(token===slot.token){stopCamera(key);$('camera-status-'+key).textContent='摄像头已中断，请检查 USB 连接';}});
     prefs[key+'Device']=settings.deviceId||device;prefs[key+'DeviceLabel']=track.label;applyCameraView(key);await cameraList();savePreferences();
-  }catch(e){if(token===slot.token){stopCamera(key);$('camera-status-'+key).textContent='打开失败：'+e.message;toast('摄像头打开失败：'+e.message);}}
+  }catch(e){if(token===slot.token){stopCamera(key);const hint=cameraErrorHint(e);$('camera-status-'+key).textContent='打开失败：'+hint;toast('摄像头打开失败：'+hint);log('error',`摄像头打开失败（${key}）：${e.name||'Error'} ${e.message} → ${hint}`);}}
   finally{if(token===slot.token)$('camera-start-'+key).disabled=false;}
 }
 
