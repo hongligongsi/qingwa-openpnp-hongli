@@ -385,7 +385,7 @@ qingwa-openpnp-hongli/
 ├── .trellis/                   # AI 辅助开发工作流脚手架（可选）
 ├── .vscode/                    # VS Code 工作区设置（C/C++ IntelliSense、调试、推荐扩展）
 ├── .workbuddy/                 # AI 协作工作日志与项目记忆（不参与构建）
-├── .openpnp2/                  # OpenPnP 上位机配置（随仓库走，23 个入库文件）
+├── .openpnp2/                  # OpenPnP 上位机配置（随仓库走）
 │   ├── machine.xml             #   机器配置：轴 / 相机 / 吸嘴 / 驱动 / 光照
 │   ├── parts.xml  packages.xml #   元件库与封装定义
 │   ├── boards.xml  panels.xml  #   板卡与拼板定义
@@ -429,14 +429,30 @@ qingwa-openpnp-hongli/
 │   │   └── README-config-i18n.md         # 两个脚本的用法说明
 │   ├── share/vscode/auto_build.py                #   Auto Build（PIO Build）
 │   └── tests/                  #   make tests-all-local 等自动化测试
-├── docs/                       # 开发者文档（Bresenham、Serial、Queue、Cutter…）
+├── docs/                       # 项目文档总目录
 │   ├── hardware/               #   ⭐ 硬件资料：原理图 PDF / Gerber / 接线指南 / BOM / 逐脚核对
-│   └── software/               #   ⭐ 上位机资料：OpenPnP 定制版与原版差异详解
+│   ├── software/               #   ⭐ 上位机资料：OpenPnP 定制版与原版差异详解
+│   ├── images/lumenpnp-flashing/  # 烧录教程截图（14 张）
+│   ├── OpenPnP固件更新烧录教程.md    #   ⭐ 固件烧录 step-by-step（CubeProgrammer / DFU）
+│   ├── hongli-pnp-源码重建方案.md     # 源码重建技术路线
+│   └── hongli-pnp-需求规格.md         # 产品需求规格
+├── OpenPnP网页版硬件调试工具/    # 🐸 青蛙硬件调试台 v3.0（新增）
+│   ├── index.html              #   页面结构
+│   ├── app.js                  #   主应用（511 行，全中文注释）
+│   ├── core.js                 #   协议引擎（192 行，全中文注释）
+│   ├── core.test.js            #   Node 单元测试（23 个用例，中文注释）
+│   ├── style.css               #   样式表（367 行，12 个区块注释）
+│   ├── serve.py                #   本地 HTTP 服务器（中文注释）
+│   └── start.bat               #   Windows 一键启动（中文注释）
+├── M300 蜂鸣器旋律编辑器/       # 🎵 网页版 M300 旋律编辑器（2026-10-29 重命名，原 m300_editor/）
+│   ├── m300_editor.html        #   单文件网页应用
+│   ├── README.md               #   使用教程 + 截图
+│   └── images/                 #   4 张功能截图
+├── honglipnp/                  # 定制相关目录（README + 安装说明）
 ├── config/  docker/            # 配置说明（config/README.md）/ 容器化构建（docker/Dockerfile）
 ├── ini/                        # PlatformIO 环境矩阵（按芯片分类）
 │   └── stm32f4.ini             #   内含 [env:Opulo_Lumen_REV3] / REV4 / REV5
 ├── lfpnp_v1.0/                 # OpenPnP 定制版 Windows 发行包（约 320 MB，⚠️ 不入库）
-├── lfpnp_v1.0-linux/           # 同上 Linux 版组装目录（内置 JRE + 启动脚本，⚠️ 不入库）
 ├── lfpnp_v1.0-openpnp-bundle.zip        # Windows 发行包压缩件（⚠️ 不入库，从 Release 获取）
 ├── lfpnp_v1.0-openpnp-linux-x64.tar.gz  # Linux 发行包压缩件（⚠️ 不入库，从 Release 获取）
 ├── .editorconfig  .gitattributes  .gitignore
@@ -445,11 +461,10 @@ qingwa-openpnp-hongli/
 ├── marlin.code-workspace       # VS Code 多根工作区
 ├── process-palette.json        # VS Code「Process Palette」→ PIO Build 命令定义
 ├── LICENSE                     # 代码 GPL-3.0；硬件/文档许可见「致谢与许可证」
-├── m300_editor/                # 🎵 网页版 M300 蜂鸣器旋律编辑器（含教程与截图）
 └── README.md / README.en.md    # 多语言说明（中文默认）
 ```
 
-> ⚠️ 标「不入库」的 4 项是第三方二进制产物 / 超大档案（合计约 1.2 GB），已在 `.gitignore` 中排除，
+> ⚠️ 标「不入库」的 3 项是第三方二进制产物 / 超大档案（合计约 900 MB），已在 `.gitignore` 中排除，
 > 不会进入 Git 历史；需要时从 [Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) 下载。
 
 ### 两套程序的配置差异要点

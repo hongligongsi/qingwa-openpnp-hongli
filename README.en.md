@@ -378,7 +378,7 @@ qingwa-openpnp-hongli/
 ├── .trellis/                   # AI-assisted development workflow scaffold (optional)
 ├── .vscode/                    # VS Code settings (C/C++ IntelliSense, debug, recommended extensions)
 ├── .workbuddy/                 # AI collaboration logs and project memory (not a build input)
-├── .openpnp2/                  # OpenPnP host configuration (tracked, 23 files)
+├── .openpnp2/                  # OpenPnP host configuration (tracked)
 │   ├── machine.xml             #   Machine setup: axes / cameras / nozzles / drivers / lighting
 │   ├── parts.xml  packages.xml #   Part library and package definitions
 │   ├── boards.xml  panels.xml  #   Board and panel definitions
@@ -422,14 +422,30 @@ qingwa-openpnp-hongli/
 │   │   └── README-config-i18n.md         # usage notes for both scripts
 │   ├── share/vscode/auto_build.py                #   Auto Build (PIO Build)
 │   └── tests/                  #   make tests-all-local etc.
-├── docs/                       # Developer docs (Bresenham, Serial, Queue, Cutter…)
+├── docs/                       # Project docs directory
 │   ├── hardware/               #   ⭐ Hardware: schematic PDF / Gerber / wiring guide / BOM / pin log
-│   └── software/               #   ⭐ Host software: customized vs. stock OpenPnP deep dive
+│   ├── software/               #   ⭐ Host software: customized vs. stock OpenPnP deep dive
+│   ├── images/lumenpnp-flashing/  # Flashing tutorial screenshots (14 images)
+│   ├── OpenPnP固件更新烧录教程.md    #   ⭐ Step-by-step firmware flashing (CubeProgrammer / DFU)
+│   ├── hongli-pnp-源码重建方案.md     # Source rebuild plan
+│   └── hongli-pnp-需求规格.md         # Product requirement spec
+├── OpenPnP网页版硬件调试工具/    # 🐸 Frog Hardware Bench v3.0 (added 2026-10-29)
+│   ├── index.html              #   Page structure
+│   ├── app.js                  #   Main app (511 lines, fully commented)
+│   ├── core.js                 #   Protocol engine (192 lines, fully commented)
+│   ├── core.test.js            #   Node unit tests (23 cases, commented)
+│   ├── style.css               #   Stylesheet (367 lines, 12 section comments)
+│   ├── serve.py                #   Local HTTP server (commented)
+│   └── start.bat               #   One-click Windows launcher (commented)
+├── M300 蜂鸣器旋律编辑器/       # 🎵 Web-based M300 melody editor (renamed 2026-10-29, formerly m300_editor/)
+│   ├── m300_editor.html        #   Single-file web app
+│   ├── README.md               #   Usage tutorial + screenshots
+│   └── images/                 #   4 feature screenshots
+├── honglipnp/                  # Customization directory (README + install notes)
 ├── config/  docker/            # Config notes (config/README.md) / containerized build (Dockerfile)
 ├── ini/                        # PlatformIO env matrix (grouped by MCU)
 │   └── stm32f4.ini             #   contains [env:Opulo_Lumen_REV3] / REV4 / REV5
 ├── lfpnp_v1.0/                 # OpenPnP customized Windows bundle (~320 MB, ⚠️ not tracked)
-├── lfpnp_v1.0-linux/           # Same for Linux (bundled JRE + launcher script, ⚠️ not tracked)
 ├── lfpnp_v1.0-openpnp-bundle.zip        # Windows bundle archive (⚠️ not tracked, get it from Releases)
 ├── lfpnp_v1.0-openpnp-linux-x64.tar.gz  # Linux bundle archive (⚠️ not tracked, get it from Releases)
 ├── .editorconfig  .gitattributes  .gitignore
@@ -438,11 +454,10 @@ qingwa-openpnp-hongli/
 ├── marlin.code-workspace       # VS Code multi-root workspace
 ├── process-palette.json        # VS Code "Process Palette" → PIO Build
 ├── LICENSE                     # code GPL-3.0; see "Credits & License" for HW/docs
-├── m300_editor/                # 🎵 Web-based M300 buzzer melody editor (with tutorial)
 └── README.md / README.en.md    # Multilingual docs (Chinese by default)
 ```
 
-> ⚠️ The 4 items marked "not tracked" are third-party binaries / oversized archives (~1.2 GB total).
+> ⚠️ The 3 items marked "not tracked" are third-party binaries / oversized archives (~900 MB total).
 > They are excluded via `.gitignore` and never enter Git history — download them from
 > [Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0).
 
