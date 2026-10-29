@@ -200,7 +200,7 @@
 | ✔ 引脚核对记录          | [`主板电路图核对.md`](docs/hardware/主板电路图核对.md)                                                                                                                       | 原理图与固件引脚头文件逐脚比对明细                                                                                                                                                   |
 | 🧾 插板 BOM 物料清单    | [`插板BOM物料清单.md`](docs/hardware/插板BOM物料清单.md)                                                                                                                   | 43 行物料 + LCSC 编号，含 TMC2209 需单独加购等坑位提醒                                                                                                                               |
 | 🖱 交互式 BOM        | `InteractiveBOM_插板_2026-10-22.html`                                                                                                                            | 24 MB，本地浏览器打开，点位号高亮 PCB 位置（不入库，[从 Release 单独下载](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/InteractiveBOM_2026-10-22.html)） |
-| 📦 完整发行包（Windows） | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0)                                                   | **OpenPnP 深度定制版**（绿色版 + 内置 Java 17 运行时，约 320 MB）                                                                                                                    |
+| 📦 完整发行包（Windows） | [GitHub Release **HL PNP v1.0**](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0)（tag 名沿用旧称 `lfpnp-v1.0`）                 | **OpenPnP 深度定制版**（绿色版 + 内置 Java 17 运行时，约 320 MB）                                                                                                                    |
 | 📦 发行包（Linux x64） | [lfpnp\_v1.0-openpnp-linux-x64.tar.gz](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/lfpnp_v1.0-openpnp-linux-x64.tar.gz) | 同一套定制程序，内置 Linux JRE 17（约 227 MB），`chmod +x OpenPnP/OpenPnP.sh` 后运行                                                                                                 |
 
 > 💡 发行包内的 OpenPnP **不是原版**，是基于 OpenPnP 深度修改的上位机：**全中文界面**、  
@@ -208,7 +208,7 @@
 > 导入贴片列表、重复贴片、贴完后 / 异常状态指令、**同拍（并行底视）**&#x529F;能、  
 > **一键校正**（基准点 / 相机标定 / 吸嘴尖视觉校准 / 皮带间隙一条龙）等定制内容，  
 > 新增飞达类型（AS2 自动飞达、蝌蚪飞达等），使用独立配置目录 `.hlpnp`  
-> （与原版 `.openpnp2` 互不干扰，可同机共存；早期 lfpnp v1.0 旧版为 `.lfpnp`）。  
+> （与原版 `.openpnp2` 互不干扰，可同机共存；早期版本（旧称 lfpnp v1.0）为 `.lfpnp`）。  
 > 逐项差异（新增 16 类 / 修改 57 类、UI 重设计、同拍算法、一键校正调用链）见
 > [`docs/software/OpenPnP定制版与原版差异.md`](docs/software/OpenPnP定制版与原版差异.md)。
 
@@ -448,13 +448,10 @@ qingwa-openpnp-hongli/
 │   ├── m300_editor.html        #   单文件网页应用
 │   ├── README.md               #   使用教程 + 截图
 │   └── images/                 #   4 张功能截图
-├── honglipnp/                  # 定制相关目录（README + 安装说明）
+├── honglipnp/                  # HL PNP 定制版目录（OpenPnP/ 发行包约 320 MB ⚠️ 不入库；README + 安装说明入库）
 ├── config/  docker/            # 配置说明（config/README.md）/ 容器化构建（docker/Dockerfile）
 ├── ini/                        # PlatformIO 环境矩阵（按芯片分类）
 │   └── stm32f4.ini             #   内含 [env:Opulo_Lumen_REV3] / REV4 / REV5
-├── lfpnp_v1.0/                 # OpenPnP 定制版 Windows 发行包（约 320 MB，⚠️ 不入库）
-├── lfpnp_v1.0-openpnp-bundle.zip        # Windows 发行包压缩件（⚠️ 不入库，从 Release 获取）
-├── lfpnp_v1.0-openpnp-linux-x64.tar.gz  # Linux 发行包压缩件（⚠️ 不入库，从 Release 获取）
 ├── .editorconfig  .gitattributes  .gitignore
 ├── platformio.ini              # ⭐ PlatformIO 工程入口（default_envs = Opulo_Lumen_REV5）
 ├── Makefile                    # make 快捷入口
@@ -464,8 +461,8 @@ qingwa-openpnp-hongli/
 └── README.md / README.en.md    # 多语言说明（中文默认）
 ```
 
-> ⚠️ 标「不入库」的 3 项是第三方二进制产物 / 超大档案（合计约 900 MB），已在 `.gitignore` 中排除，
-> 不会进入 Git 历史；需要时从 [Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) 下载。
+> ⚠️ `honglipnp/OpenPnP/` 是第三方二进制产物（约 320 MB），已在 `.gitignore` 中排除，
+> 不会进入 Git 历史；需要时从 [Release **HL PNP v1.0**](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) 下载。
 
 ### 两套程序的配置差异要点
 

@@ -1,6 +1,6 @@
-# OpenPnP 定制版（lfpnp_v1.0）与原版差异详解
+# OpenPnP 定制版（HL PNP v1.0）与原版差异详解
 
-> **分析对象**：`lfpnp_v1.0/OpenPnP/app/openpnp-gui-0.0.1-alpha-SNAPSHOT.jar`
+> **分析对象**：`honglipnp/OpenPnP/app/openpnp-gui-0.0.1-alpha-SNAPSHOT.jar`
 > （11.3 MB，含 724 个类，构建于 2026-10-23 11:19，Maven Jar Plugin 3.2.0 + JDK 17）
 > **对比基线**：GitHub `openpnp/openpnp` 主线源码（708 个类）
 > **分析方法**：解包 jar → CFR 反编译逐文件 diff + class 常量池中文扫描 + 原版源码逐行比对

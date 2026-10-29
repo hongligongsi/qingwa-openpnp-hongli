@@ -187,7 +187,7 @@ How to choose among the four feeder configs:
 | ✔ Pin verification log | [`主板电路图核对.md`](docs/hardware/主板电路图核对.md) | Pin-by-pin comparison between schematic and firmware pin header |
 | 🧾 Carrier-board BOM | [`插板BOM物料清单.md`](docs/hardware/插板BOM物料清单.md) | 43 line items with LCSC part numbers; warns that TMC2209 must be ordered separately |
 | 🖱 Interactive BOM | `InteractiveBOM_插板_2026-10-22.html` | 24 MB — open locally in a browser; clicking a designator highlights the PCB location (not in repo; [download from Release](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/InteractiveBOM_2026-10-22.html)) |
-| 📦 Full bundle (Windows) | [GitHub Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) | **Deeply customized OpenPnP** (portable build with bundled Java 17 runtime, ~320 MB) |
+| 📦 Full bundle (Windows) | [GitHub Release **HL PNP v1.0**](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0) (tag keeps legacy name `lfpnp-v1.0`) | **Deeply customized OpenPnP** (portable build with bundled Java 17 runtime, ~320 MB) |
 | 📦 Bundle (Linux x64) | [lfpnp_v1.0-openpnp-linux-x64.tar.gz](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/download/lfpnp-v1.0/lfpnp_v1.0-openpnp-linux-x64.tar.gz) | Same customized app with bundled Linux JRE 17 (~227 MB); `chmod +x OpenPnP/OpenPnP.sh` then run |
 
 > 💡 The OpenPnP inside the bundle is **not the stock release** — it is a heavily
@@ -199,7 +199,7 @@ How to choose among the four feeder configs:
 > calibration / nozzle-tip vision / belt backlash in one pass), and extra feeder
 > types (AS2 auto feeder, tadpole feeder). It stores its config in a separate
 > `.hlpnp` directory (coexists with stock OpenPnP's `.openpnp2` on the same
-> machine; the legacy lfpnp v1.0 release used `.lfpnp`).
+> machine; the legacy release (formerly lfpnp v1.0) used `.lfpnp`).
 > A class-level diff (16 new classes / 57 modified, UI redesign, simultaneous-vision
 > algorithm, one-click calibration call chain) is in
 > [`docs/software/OpenPnP定制版与原版差异.md`](docs/software/OpenPnP定制版与原版差异.md).
@@ -441,13 +441,10 @@ qingwa-openpnp-hongli/
 │   ├── m300_editor.html        #   Single-file web app
 │   ├── README.md               #   Usage tutorial + screenshots
 │   └── images/                 #   4 feature screenshots
-├── honglipnp/                  # Customization directory (README + install notes)
+├── honglipnp/                  # HL PNP customization dir (OpenPnP/ bundle ~320 MB ⚠️ not tracked; README + install notes tracked)
 ├── config/  docker/            # Config notes (config/README.md) / containerized build (Dockerfile)
 ├── ini/                        # PlatformIO env matrix (grouped by MCU)
 │   └── stm32f4.ini             #   contains [env:Opulo_Lumen_REV3] / REV4 / REV5
-├── lfpnp_v1.0/                 # OpenPnP customized Windows bundle (~320 MB, ⚠️ not tracked)
-├── lfpnp_v1.0-openpnp-bundle.zip        # Windows bundle archive (⚠️ not tracked, get it from Releases)
-├── lfpnp_v1.0-openpnp-linux-x64.tar.gz  # Linux bundle archive (⚠️ not tracked, get it from Releases)
 ├── .editorconfig  .gitattributes  .gitignore
 ├── platformio.ini              # ⭐ PlatformIO entry (default_envs = Opulo_Lumen_REV5)
 ├── Makefile                    # make shortcuts
@@ -457,9 +454,9 @@ qingwa-openpnp-hongli/
 └── README.md / README.en.md    # Multilingual docs (Chinese by default)
 ```
 
-> ⚠️ The 3 items marked "not tracked" are third-party binaries / oversized archives (~900 MB total).
-> They are excluded via `.gitignore` and never enter Git history — download them from
-> [Release `lfpnp-v1.0`](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0).
+> ⚠️ `honglipnp/OpenPnP/` is a third-party binary bundle (~320 MB).
+> It is excluded via `.gitignore` and never enters Git history — download it from
+> [Release **HL PNP v1.0**](https://github.com/hongligongsi/qingwa-openpnp-hongli/releases/tag/lfpnp-v1.0).
 
 ### Key differences between the two programs
 

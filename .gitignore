@@ -169,26 +169,25 @@ tags
 .openpnp2/backups/
 .openpnp2/snapshots/
 
-# OpenPnP 绿色版发行包（含内置 Java 运行时，约 320 MB）
-# 体积过大且为第三方二进制产物，不入库；需要时从发行页面重新获取
+# HL PNP 绿色版发行映像（约 320 MB，含 OpenPnP.exe + 自带 Java 17 runtime）
+# 体积过大且为第三方二进制产物，不入库；需要时从 Release 重新获取
+# 只忽略二进制映像本体，保留 honglipnp/README.md 与 安装说明.txt 入库
+# （2026-10-29 起统一品牌 HL PNP，旧目录名 lfpnp_v1.0/ 已废弃）
+honglipnp/OpenPnP/
 lfpnp_v1.0/
 lfpnp_v1.0-linux/
-
-# hongli pnp 绿色版发行映像（同上，约 321 MB，含 OpenPnP.exe + 自带 Java 17 runtime）
-# 只忽略二进制映像本体，保留 honglipnp/README.md 与 安装说明.txt 入库
-honglipnp/OpenPnP/
 
 
 # 本地工作记忆（Agent 笔记，不入库）
 .workbuddy/
 .trae-html-share-packages/
 
-# 发行包 zip（已上传 GitHub Release lfpnp-v1.0，本地可删）
+# 发行包压缩件（已上传 GitHub Release HL PNP v1.0，资产名沿用旧称 lfpnp_v1.0，本地可删）
 lfpnp_v1.0-openpnp-bundle.zip
+lfpnp_v1.0-openpnp-linux-x64.tar.gz
 
 # 交互式 BOM（24MB，含 3D 渲染；需要分发时传 Release）
 docs/hardware/InteractiveBOM_插板_2026-10-22.html
-lfpnp_v1.0-openpnp-linux-x64.tar.gz
 
 # 硬件调试台内置便携 Python（免安装版必需，约 23MB，强制纳入版本管理）
 !OpenPnP网页版硬件调试工具/runtime/
