@@ -364,13 +364,14 @@ UART 为**单线半双工**：TX 与 RX 定义成同一引脚，靠 TMC2209 的 
 
 ## 🏗 目录结构
 
-本仓库包含**两套固件程序**，共用同一份 Marlin 源码，靠「配置文件 + 构建环境（env）」区分：
+本仓库包含**三套固件程序**：前两套共用同一份 Marlin 源码，靠「配置文件 + 构建环境（env）」区分；第三套是独立的 8051 舵机飞达程序（Keil C51 工程）：
 
-| 程序           | 目标硬件                             | 主控芯片          | 构建 env                 | 配置来源                                  |
-| ------------ | -------------------------------- | ------------- | ---------------------- | ------------------------------------- |
+| 程序           | 目标硬件                             | 主控芯片          | 构建 env / 工具链                  | 配置来源                                  |
+| ------------ | -------------------------------- | ------------- | ------------------------------ | ------------------------------------- |
 | **主板固件**     | 青蛙主板 REV5（贴片机主板） | STM32F407VET6 | `Opulo_Lumen_REV5`（默认） | `Marlin/` 根目录激活配置（快照见 `rev5-config/`） |
 | **飞达固件**     | 电动送料器（Feeder）REV4 主控             | STM32F407VET6 | `Opulo_Lumen_REV4`     | `Marlin/rev4-*-feeder-config/` 三选一    |
 | **飞达固件（旧款）** | 电动送料器（Feeder）REV3 主控             | STM32F407VET6 | `Opulo_Lumen_REV3`     | `Marlin/rev3-feeder-config/`          |
+| **蝌蚪飞达固件**   | 蝌蚪飞达（SG90 舵机送料器）                | STC8G1K17A（8051） | Keil µVision / C51（非 PlatformIO） | 单文件源码 `STC8G1K17舵机程序 蝌蚪飞达/mian.c` |
 
 三块板的板级定义（引脚 / 时钟 / 上传协议）分别在
   
@@ -448,6 +449,11 @@ qingwa-openpnp-hongli/
 │   ├── m300_editor.html        #   单文件网页应用
 │   ├── README.md               #   使用教程 + 截图
 │   └── images/                 #   4 张功能截图
+├── STC8G1K17舵机程序 蝌蚪飞达/   # 🐸 蝌蚪飞达舵机固件（STC8G1K17A，Keil C51，独立工程）
+│   ├── mian.c                  #   主程序（⚠️ 文件名是 mian 不是 main）：舵机 PWM + 串口命令
+│   ├── STARTUP.A51             #   8051 启动汇编
+│   ├── main.uvproj             #   Keil µVision 工程文件
+│   └── Objects/  Listings/     #   编译产物（烧录用 .hex 在 Objects/）
 ├── honglipnp/                  # HL PNP 定制版目录（OpenPnP/ 发行包约 320 MB ⚠️ 不入库；README + 安装说明入库）
 ├── config/  docker/            # 配置说明（config/README.md）/ 容器化构建（docker/Dockerfile）
 ├── ini/                        # PlatformIO 环境矩阵（按芯片分类）
@@ -752,6 +758,53 @@ cp /tmp/mb_Configuration_adv.h Marlin/Configuration_adv.h
 >   改用 `rev4-v3.0-feeder-config` 或 `rev4-v3.1-feeder-pwm-aux-config` 时
 >   仍用 `-e Opulo_Lumen_REV4`。
 > - 提交代码前记得还原主板配置，保持 `Marlin/` 根目录始终是 REV5。
+
+### 程序三：蝌蚪飞达固件（STC8G1K17 舵机）
+
+蝌蚪飞达是**舵机驱动的简易送料器**，主控为 STC8G1K17A（8051 内核），
+与 Marlin 无关，是一个独立的 Keil C51 工程：
+
+```text
+STC8G1K17舵机程序 蝌蚪飞达/
+├── mian.c        # 全部逻辑在此（文件名 mian 是历史拼写，勿改，工程引用它）
+├── STARTUP.A51   # 8051 启动代码
+└── main.uvproj   # Keil µVision 工程（双击打开即可编译）
+```
+
+**引脚分配**
+
+| 引脚 | 功能 | 说明 |
+| ---- | ---- | ---- |
+| P3.0 | UART1 RXD | 串口接收（9600 8N1） |
+| P3.1 | UART1 TXD | 串口发送（9600 8N1） |
+| P3.2 | 按键 K1 | 手动触发一次推料 |
+| P3.3 | PWM 输出 | SG90 舵机信号线（50Hz） |
+| P5.4 | LED | 动作指示灯（推料时常亮，结束熄灭） |
+
+**工作原理**：Timer0 每 50µs 中断一次生成 PWM，400 次为一个 20ms 周期；
+`servo_cnt` 决定高电平宽度（10 = 0.5ms = 0°，50 = 2.5ms = 180°）。
+推料动作 = 转到 180° 把编带拨进一格 → 回到 0° 复位。
+
+**串口命令**（以 `\n` 或 `\r` 结尾）：
+
+| 命令 | 功能 | 响应 |
+| ---- | ---- | ---- |
+| `P` 或 `PUSH` | 执行一次推料（180°→0°） | `OK:PUSH` |
+| `0` ~ `180` | 转到指定角度 | `OK` |
+| `GET` | 查询当前角度 | `ANGLE:xxx` |
+| 其他 | 非法命令 | `ERR` |
+
+**编译与烧录**：
+
+1. 用 Keil µVision（C51）打开 `main.uvproj`，Build（F7）生成
+   `Objects/main.hex`；
+2. 用 STC-ISP 烧录软件通过串口把 `.hex` 下载到 STC8G1K17A
+   （系统时钟 11.0592MHz，IRC 或晶振以实际硬件为准）；
+3. 上电后串口会打印 `STC8G1K17 Servo Feeder Ready`，
+   发 `P\n` 应看到舵机动作并收到 `OK:PUSH`。
+
+> 在 OpenPnP 中把蝌蚪飞达配置为 GcodeDriver 类型的送料器，
+> feed 动作发送 `P\n` 即可触发推料。
 
 ### 烧录方式详解
 

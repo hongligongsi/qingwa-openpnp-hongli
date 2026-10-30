@@ -12,7 +12,7 @@ hongli pnp 安装版 安装说明
   完整需求清单见仓库文档《hongli pnp 定制需求规格》
   （docs/hongli-pnp-需求规格.md）
 - 本说明按《hongli pnp 定制需求规格》口径编写（配置目录 .hlpnp、
-  安装位置 C:\honglipnp）；早期版本（旧称 lfpnp v1.0）使用旧路径，不再维护
+  安装位置 C:\honglipnp）；早期版本使用旧路径，不再维护
 
 二、系统要求
 - Windows 10 / 11 64 位

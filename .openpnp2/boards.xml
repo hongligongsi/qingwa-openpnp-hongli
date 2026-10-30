@@ -1,3 +1,59 @@
+<!--
+  ============================================================================
+  OpenPnP 板卡配置文件 (boards.xml)
+  ============================================================================
+  所属模块: OpenPnP 项目配置
+  生成方式: 由 OpenPnP GUI 自动生成 / 手动编辑
+  ----------------------------------------------------------------------------
+  【文件作用】
+    本文件维护 OpenPnP 项目中"已注册"的 PCB 板卡清单。
+    OpenPnP 启动时会读取此文件, 把每个 <board> 指向的 .board.xml
+    加载到"板卡列表"中, 供用户在 Jobs 中选择使用。
+
+  【标签说明】
+    <openpnp-boards>  根节点, 固定值, 不可修改
+    <board>           子节点, 文本内容为板卡定义文件(.board.xml)的路径
+
+  【路径规则】
+    1. 支持绝对路径 (推荐, 避免工作目录变化导致找不到文件)
+       Linux 示例: /home/user/projects/controller.board.xml
+       Windows示例: D:/projects/controller.board.xml
+    2. 支持相对路径 (相对于 OpenPnP 的工作目录, 即本文件所在目录)
+       示例: boards/myboard.board.xml
+    3. 路径分隔符建议统一使用正斜杠 "/", 跨平台兼容性更好
+
+  【.board.xml 文件内容】
+    每个板卡定义文件通常包含:
+      - board 名称与唯一 ID
+      - 板卡尺寸 (width / height)
+      - 板卡原点 (origin) 与 fiducial 标记点
+      - 元件放置位置列表 (placements)
+      - 禁用的元件列表 (disabled placements)
+
+  【使用流程】
+    1. 在 OpenPnP 中: File -> Import Board 导入 .board.xml
+    2. OpenPnP 会自动把路径写入本文件的 <board> 节点
+    3. 也可以手动在下方添加 <board> 节点来注册板卡
+    4. 在 Jobs 面板中即可选择已注册的板卡进行贴装
+
+  【注意事项】
+    - 修改后需重启 OpenPnP 或刷新项目才能生效
+    - 若 .board.xml 文件被移动或删除, 对应 <board> 节点会失效
+    - 备份文件位于 ./backups/ 目录, 可用于回滚
+  ============================================================================
+-->
 <openpnp-boards>
-   <board>/home/hbx/桌面/ftp/1ftp.board.xml</board>
+  <!-- ================================================================== -->
+  <!-- 板卡定义区域: 每行一个 <board> 节点, 指向 .board.xml 文件路径      -->
+  <!-- 取消下方注释并修改路径即可注册新板卡                                -->
+  <!-- ================================================================== -->
+
+  <!-- 示例 1: Windows 绝对路径 -->
+  <!-- <board>C:/Users/hongliwang/Desktop/qingwa-openpnp-hongli/boards/myboard.board.xml</board> -->
+
+  <!-- 示例 2: Linux 绝对路径 -->
+  <!-- <board>/home/hbx/桌面/ftp/1ftp.board.xml</board> -->
+
+  <!-- 示例 3: 相对路径 (相对于本文件所在目录) -->
+  <!-- <board>boards/controller.board.xml</board> -->
 </openpnp-boards>

@@ -1,0 +1,167 @@
+C51 COMPILER V9.54   MIAN                                                                  07/08/2026 17:19:26 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE MIAN
+OBJECT MODULE PLACED IN .\Objects\mian.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE mian.c OPTIMIZE(1,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\mian
+                    -.lst) TABS(2) OBJECT(.\Objects\mian.obj)
+
+line level    source
+
+   1          /***************   STC8G1K17A 50Hz SG90舵机控制  ******************/
+   2          #include <STC8G.H>
+   3          #include <intrins.h>
+   4          
+   5          // IO定义
+   6          sbit K1 = P3^2;           // 按键
+   7          sbit PWM_OUT  = P3^3;    // 舵机PWM输出
+   8          //=====??1:??LED??P5.4=====
+   9          sbit SERVO_LED = P5^4;
+  10          // 全局变量
+  11          unsigned int count = 0;
+  12          unsigned char servo_cnt = 10;  // 上电默认0°
+  13          bit servo_running = 0;  // 舵机动作标志
+  14          /*==================== 延时函数 @11.0592MHz ====================*/
+  15          void Delay200ms(void) //@11.0592MHz
+  16          {
+  17   1        unsigned char data i, j, k;
+  18   1      
+  19   1        i = 12;
+  20   1        j = 57;
+  21   1        k = 122;
+  22   1        do
+  23   1        {
+  24   2          do
+  25   2          {
+  26   3            while (--k);
+  27   3          } while (--j);
+  28   2        } while (--i);
+  29   1      }
+  30          
+  31          void delay_20ms(void)
+  32          {
+  33   1        unsigned char i, j;
+  34   1        i = 216;
+  35   1        j = 37;
+  36   1        do{ while (--j); } while (--i);
+  37   1      }
+  38          
+  39          void delay_500ms(void)  //@11.0592MHz
+  40          {
+  41   1        unsigned char data i, j, k;
+  42   1      
+  43   1        i = 29;
+  44   1        j = 14;
+  45   1        k = 54;
+  46   1        do
+  47   1        {
+  48   2          do
+  49   2          {
+  50   3            while (--k);
+  51   3          } while (--j);
+  52   2        } while (--i);
+  53   1      }
+  54          
+C51 COMPILER V9.54   MIAN                                                                  07/08/2026 17:19:26 PAGE 2   
+
+  55          
+  56          /*==================== T0初始化 50us中断 ====================*/
+  57          void Timer0_Init(void)    
+  58          {
+  59   1        AUXR |= 0x80;     // T0 1T模式
+  60   1        TMOD &= 0xF0;     
+  61   1        TL0 = 0xD7;       
+  62   1        TH0 = 0xFD;       
+  63   1        TF0 = 0;        
+  64   1        TR0 = 1;  
+  65   1        ET0 = 1;      
+  66   1      }
+  67          
+  68          /*==================== T0中断生成标准舵机PWM ====================*/
+  69          void Timer0_ISR(void) interrupt 1 
+  70          {
+  71   1        // 自动重装50us初值
+  72   1        TL0 = 0xD7;       
+  73   1        TH0 = 0xFD; 
+  74   1      
+  75   1        count++;  
+  76   1        
+  77   1        // 输出高低电平
+  78   1        PWM_OUT = (count <= servo_cnt) ? 1 : 0;
+  79   1        
+  80   1        if(servo_running)
+  81   1        SERVO_LED = 1;
+  82   1      else
+  83   1        SERVO_LED = 0;
+  84   1      
+  85   1        // 20ms周期清零
+  86   1        if(count >= 400)
+  87   1          count = 0;
+  88   1      }
+  89          /*==================== 按键扫描 ====================*/
+  90          /*=============================================================================
+  91           * 舵机PWM参数：定时器50us进一次中断
+  92           * 总周期400次 *50us = 20ms(50Hz)
+  93           * 0.5ms = 10次中断 | 1.5ms=30次 | 2.5ms=50次
+  94           0°  0.5ms
+  95           90° 1.5ms
+  96           180°2.5ms
+  97           20ms总计数
+  98           =============================================================================*/
+  99          void Key_Scan(void)
+ 100          {
+ 101   1        if(K1 == 0)
+ 102   1        {
+ 103   2          delay_20ms();       
+ 104   2          if(K1 == 0)
+ 105   2          {
+ 106   3          
+ 107   3            while(K1 == 0); // 等待松开按键
+ 108   3            servo_running = 1;  //新增动作开始，led常亮
+ 109   3            
+ 110   3            Delay200ms();
+ 111   3                  
+ 112   3                  servo_cnt = 50; // 转到180°,PWM时间间隔必须10-50，防止过冲损坏舵机
+ 113   3            delay_500ms();        
+ 114   3            servo_cnt = 10;  // 回到0°,PWM时间间隔必须10-50，防止过冲损坏舵机
+ 115   3            delay_20ms();
+ 116   3            Delay200ms();
+C51 COMPILER V9.54   MIAN                                                                  07/08/2026 17:19:26 PAGE 3   
+
+ 117   3            servo_running = 0;  // 新增动作全部结束，led熄灭
+ 118   3          }
+ 119   2        }
+ 120   1      }
+ 121          
+ 122          /*==================== 主函数 ====================*/
+ 123          void main(void) 
+ 124          {
+ 125   1          P3M0 = (P3M0 & ~0x04) | 0x08; P3M1 &= ~0x0c; 
+ 126   1         P5M0 |= 0x10;  // bit4?1
+ 127   1         P5M1 &= ~0x10; // bit4?0
+ 128   1      
+ 129   1        SERVO_LED = 0; // 上电舵机熄灭
+ 130   1        
+ 131   1        servo_cnt = 10; // 上电舵机0°
+ 132   1        Timer0_Init();
+ 133   1        EA = 1;        // 开启总中断
+ 134   1      
+ 135   1        while(1) 
+ 136   1        {
+ 137   2          Key_Scan();
+ 138   2        }
+ 139   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    251    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     11    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
