@@ -1,5 +1,5 @@
 /* ============================================================
- *  青蛙硬件调试台 v3.0 — 主应用入口（浏览器端）
+ *  青蛙硬件调试台 v3.0.3 — 主应用入口（浏览器端）
  *  ----------------------------------------------------------
  *  本文件是 UI 层：DOM 生成、事件绑定、状态渲染、串口读写编排。
  *  协议层逻辑全部委托给 core.js 的 Bench 模块。
@@ -7,6 +7,10 @@
  *    用户点按钮 → run() → channel.execute() → core.js 校验 → 串口 write → 等待 ok → 回调更新状态
  *  ============================================================ */
 'use strict';
+
+/* 构建号：页面顶部会显示它。改了 app.js 就把它 +1，
+ * 这样一眼就能看出浏览器里跑的是新代码还是缓存的旧代码。 */
+const BENCH_VERSION = 'v3.0.3';
 
 /* ---------- 一、DOM 快捷方法 ---------- */
 const $ = id => document.getElementById(id);  // 简化 document.getElementById
@@ -475,7 +479,7 @@ $('resume-control').addEventListener('click',async()=>{
 
 /* ---------- 二十、日志导出 ---------- */
 $('clear-log').addEventListener('click',()=>{$('log').replaceChildren();logEntries.length=0;});
-$('export-log').addEventListener('click',()=>download('openpnp-log-'+stamp()+'.txt',`青蛙硬件调试台 v3.0\n模式：${$('mode').value}\n`+logEntries.join('\n')));
+$('export-log').addEventListener('click',()=>download('openpnp-log-'+stamp()+'.txt',`青蛙硬件调试台 ${BENCH_VERSION}\n模式：${$('mode').value}\n`+logEntries.join('\n')));
 
 /* ---------- 二十一、⚙ 指令配置面板 ---------- */
 const configLabels={baud:'波特率',timeout:'每条指令响应超时（ms）',settle:'连接启动等待（ms）',newline:'行结束符（LF / CRLF / CR）',ack:'确认响应正则',error:'错误响应正则',jog:'点动模板 · {axis} {distance} {feed}',homeX:'X 单轴回零',homeY:'Y 单轴回零',homeZ:'Z 单轴回零',homeAll:'全部回零',motorOff:'关闭电机',position:'查询坐标',stop:'软件急停指令',stopRaw:'急停使用原始字符（支持 \\xHH，不追加换行）',sharedLights:'联控：使用上灯参数，分别发送上下灯指令',nozzleLeftAxis:'左吸嘴轴（A / B）',nozzleRightAxis:'右吸嘴轴（A / B）',nozzleLeftCwPositive:'左吸嘴顺时针对应正方向（取消则反向）',nozzleRightCwPositive:'右吸嘴顺时针对应正方向（取消则反向）'};
@@ -575,37 +579,88 @@ async function startCamera(key){
   // 把 getUserMedia 的英文 DOMException 翻译成中文处理建议
   const cameraErrorHint=(e)=>{
     const map={
-      NotFoundError:'找不到所选摄像头（设备 ID 已过期或被拔出），请点击「授权 / 刷新摄像头」后重新选择',
+      NotFoundError:'找不到可用摄像头（设备被拔出或 ID 已过期），请点击「授权 / 刷新摄像头」后重新选择',
       NotReadableError:'摄像头被其他程序占用（OpenPnP / 会议软件 / 相机应用），请关闭后重试',
       NotAllowedError:'浏览器未获得摄像头权限，请点击地址栏左侧图标允许本站访问',
-      OverconstrainedError:'摄像头不支持请求的分辨率，请更换设备',
+      AbortError:'摄像头启动超时（设备无响应，多半是 USB 带宽或供电不足）：先关掉其他占用摄像头的程序；把摄像头换到另一个 USB 口（别和另一台共用一个 HUB）；或多点几次重试',
+      OverconstrainedError:'摄像头不接受请求的参数（设备 ID 过期或分辨率不支持）',
       SecurityError:'请通过 localhost 或 HTTPS 打开'};
-    return map[e.name]||(e.name&&e.name!==e.message?e.name+'：'+e.message:e.message);
+    // OverconstrainedError 的 constraint 直接指出是哪一条不满足，优先用它给建议
+    const byConstraint={
+      deviceId:'所选摄像头已不可用（设备 ID 失效 / 换了 USB 口），请点「授权 / 刷新摄像头」重新选择',
+      width:'摄像头不支持请求的宽度',
+      height:'摄像头不支持请求的高度',
+      frameRate:'摄像头不支持请求的帧率'};
+    if(e.name==='OverconstrainedError'&&e.constraint&&byConstraint[e.constraint])return byConstraint[e.constraint];
+    // 约束名字拿不到时也别再说「分辨率不支持」——那会把 deviceId 失效误导成换摄像头，
+    // 直接把浏览器给的原文交出来，方便按日志排查。
+    if(e.name==='OverconstrainedError')return '摄像头不接受请求的参数（多半是设备 ID 失效），请点「授权 / 刷新摄像头」后重新选择';
+    // 普通 Error（我们自己抛的中文提示）直接显示 message，不加 'Error：' 前缀
+    return map[e.name]||(e.name&&e.name!=='Error'&&e.name!==e.message?e.name+'：'+e.message:e.message);
   };
+  const base={width:{ideal:1280},height:{ideal:720}};
+  // 分辨率降级档：USB 供电/带宽不足时 720p 会「Timeout starting video source」，
+  // 降到 480p 常常立刻就能出图——先降分辨率，再考虑换设备。
+  const RES=[{tag:'1280×720',c:base},{tag:'640×480',c:{width:{ideal:640},height:{ideal:480}}},{tag:'设备默认',c:null}];
   try{
     if(!navigator.mediaDevices?.getUserMedia)throw Error('请通过 localhost 或 HTTPS 打开');
     const device=$('device-'+key).value;const other=cameraSlots[key==='top'?'bottom':'top'].stream?.getVideoTracks()[0]?.getSettings().deviceId;
     if(device && other===device)throw Error('该设备已用于另一路画面，请选择另一摄像头');
-    let stream;
-    try{stream=await navigator.mediaDevices.getUserMedia({video:{...(device?{deviceId:{exact:device}}:{}),width:{ideal:1280},height:{ideal:720}},audio:false});}
-    catch(e){
-      // 保存的设备 ID 过期（浏览器会按域名重新生成）时，自动降级为默认摄像头重试一次
-      if(e.name!=='NotFoundError'||!device)throw e;
-      log('error','保存的摄像头 ID 已失效，自动改用默认摄像头重试…');
-      stream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720}},audio:false});
+    // deviceId 由浏览器按「站点 + 设备」生成，换 USB 口、重装驱动、重开浏览器、清站点数据都会变。
+    // 用 exact 传旧 ID 时浏览器抛的是 OverconstrainedError(deviceId) 而不是 NotFoundError，
+    // 所以按「保存的 ID → 同名设备 → 另一路没占用的设备 → 浏览器默认」逐级让步，
+    // 每一级内部再按「720p → 480p → 设备默认」降分辨率重试。
+    const inputs=(await navigator.mediaDevices.enumerateDevices().catch(()=>[])).filter(d=>d.kind==='videoinput'&&d.deviceId);
+    const free=inputs.filter(d=>d.deviceId!==other);
+    const wantLabel=prefs[key+'DeviceLabel'];
+    const sameName=wantLabel?free.find(d=>d.label===wantLabel):null;
+    // 用户选定的那台优先：换设备会打开错误的画面，降分辨率不会
+    const target=free.find(d=>d.deviceId===device)||sameName||null;
+    const attempts=[],seen=new Set();
+    const add=(dev,res,why)=>{
+      const id=dev?dev.deviceId:null,k=(id||'-')+'|'+res.tag;
+      if(seen.has(k))return;seen.add(k);
+      attempts.push({video:{...(id?{deviceId:{exact:id}}:{}),...(res.c||{})},id,tag:res.tag,why});
+    };
+    if(target)for(const r of RES)add(target,r,'目标设备');
+    // 换别的摄像头时直接用低分辨率，减少一次超时等待
+    for(const d of free)add(d,RES[1],'其他设备');
+    for(const r of RES)add(null,r,'浏览器默认');
+    let stream=null,used=null,lastError=null;
+    for(let i=0;i<attempts.length&&i<9;i++){
+      const a=attempts[i];
+      if(token!==slot.token)return;
+      $('camera-status-'+key).textContent=`正在打开摄像头…（${a.why} ${a.tag}，第 ${i+1} 次尝试）`;
+      try{stream=await navigator.mediaDevices.getUserMedia({video:a.video,audio:false});used=a;break;}
+      catch(e){
+        lastError=e;
+        // 权限被拒 / 非安全上下文不会因为换参数而好转，直接上报，避免反复弹权限框
+        if(e.name==='NotAllowedError'||e.name==='SecurityError')throw e;
+        log('info',`摄像头重试（${a.why} ${a.tag}）：${e.name}${e.constraint?' / '+e.constraint:''}`);
+        // 失败后立刻重开，部分 UVC 驱动还在释放上一个失败的句柄，等 200ms 成功率更高
+        await new Promise(r=>setTimeout(r,200));
+      }
     }
+    if(!stream)throw lastError||Error('没有可用的摄像头');
     if(token!==slot.token){stream.getTracks().forEach(t=>t.stop());return;}
-    if(other && stream.getVideoTracks()[0]?.getSettings().deviceId===other){stream.getTracks().forEach(t=>t.stop());throw Error('选中了另一路正在使用的设备，请先刷新列表并选择另一摄像头');}
+    const openedId=stream.getVideoTracks()[0]?.getSettings().deviceId;
+    if(other&&openedId===other){stream.getTracks().forEach(t=>t.stop());throw Error('选中了另一路正在使用的设备，请先刷新列表并选择另一摄像头');}
     slot.stream=stream;const v=$('video-'+key);v.srcObject=stream;await v.play();
-    if(token!==slot.token)return;
+    if(token!==slot.token){stream.getTracks().forEach(t=>t.stop());return;}
     $('placeholder-'+key).hidden=true;const track=stream.getVideoTracks()[0],settings=track.getSettings();$('camera-status-'+key).textContent=`${settings.width} × ${settings.height} · ${track.label}`;
     track.addEventListener('ended',()=>{if(token===slot.token){stopCamera(key);$('camera-status-'+key).textContent='摄像头已中断，请检查 USB 连接';}});
+    // 换了设备 / 降了分辨率都明确告诉用户，别让人以为还是原来那台、原来那个画质
+    if(used.id&&device&&used.id!==device)log('info',`原摄像头不可用，已自动改用「${track.label||used.id}」；如不对请在下拉框重新选择`);
+    if(used.tag!=='1280×720')log('info',`摄像头以 ${used.tag} 打开（高分辨率启动失败，多为 USB 带宽/供电不足；换 USB 口或独立供电可恢复）`);
     prefs[key+'Device']=settings.deviceId||device;prefs[key+'DeviceLabel']=track.label;applyCameraView(key);await cameraList();savePreferences();
   }catch(e){if(token===slot.token){stopCamera(key);const hint=cameraErrorHint(e);$('camera-status-'+key).textContent='打开失败：'+hint;toast('摄像头打开失败：'+hint);log('error',`摄像头打开失败（${key}）：${e.name||'Error'} ${e.message} → ${hint}`);}}
   finally{if(token===slot.token)$('camera-start-'+key).disabled=false;}
 }
 
 /* ---------- 二十三、页面收尾 ---------- */
+// 把构建号写到标题和页头，用户一眼就能确认是不是最新代码（排查「改了没生效」用）
+document.title = `OpenPnP · 青蛙硬件调试台 ${BENCH_VERSION}`;
+{const el=document.querySelector('header p b');if(el)el.textContent=BENCH_VERSION;}
 window.addEventListener('beforeunload',()=>{channel?.cancel();for(const key of ['top','bottom'])cameraSlots[key].stream?.getTracks().forEach(t=>t.stop());});
 installConfig(config);applyPreferences(prefs);render();
 for(const [id,key]of [['feed','feed'],['feed-z','feedZ'],['left-angle','leftAngle'],['right-angle','rightAngle'],['left-target','leftTarget'],['right-target','rightTarget'],['left-feed','leftFeed'],['right-feed','rightFeed']])$(id).addEventListener('input',()=>{const f=$(id);if(f.value.trim() && f.validity.valid){prefs[key]=Number(f.value);savePreferences();}});
@@ -613,4 +668,4 @@ $('mode').addEventListener('change',()=>{prefs.mode=$('mode').value;savePreferen
 $('baud').addEventListener('change',()=>{config.baud=Number($('baud').value);savePreferences();});
 if(navigator.mediaDevices?.enumerateDevices)cameraList().catch(e=>{$('camera-discovery').textContent='摄像头枚举失败：'+e.message;log('error',e.message);});
 else $('camera-discovery').textContent='摄像头 API 不可用，请用桌面 Chrome / Edge 打开 localhost 页面';
-log('info','调试台已就绪 · 已加载保存的设置 · 请先连接');
+log('info',`调试台已就绪 · ${BENCH_VERSION} · 已加载保存的设置 · 请先连接`);

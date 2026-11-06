@@ -21,6 +21,13 @@ ENTRY_PAGE = '硬件调试台.html'
 class Handler(SimpleHTTPRequestHandler):
     """自定义请求处理：把根路径 / 和旧路径 /index.html 都重定向到中文入口页"""
 
+    def end_headers(self):
+        # 本地工具改一次代码就要立刻生效。默认的 SimpleHTTPRequestHandler 不发 Cache-Control，
+        # 浏览器会按「上次修改时间」做启发式缓存，改完 app.js 刷新页面还是旧代码。
+        self.send_header('Cache-Control', 'no-store, must-revalidate')
+        self.send_header('Pragma', 'no-cache')
+        super().end_headers()
+
     def send_head(self):
         if self.path in ('/', '/index.html'):
             # 302 临时重定向到 URL 编码后的中文文件名
